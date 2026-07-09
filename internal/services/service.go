@@ -1,18 +1,16 @@
 package services
 
-import (
-	"github.com/ms-kanban-server/api/repositories"
-)
+import "github.com/ms-kanban-server/internal/repository"
 
 type Service interface {
 }
 
-func InitRepositories(repo repositories.Repository) Service {
+func InitRepositories(repo repository.Repository) Service {
 	return &service{
 		Repo: repo,
 	}
 }
 
 type service struct {
-	Repo repositories.Repository
+	Repo repository.Repository
 }

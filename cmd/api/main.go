@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ms-kanban-server/api/routes"
-	"github.com/ms-kanban-server/internals/configs"
-	"github.com/ms-kanban-server/internals/db"
+	"github.com/ms-kanban-server/config/configs"
+	"github.com/ms-kanban-server/drivers/postgres"
+	"github.com/ms-kanban-server/internal/routes"
 )
 
 func main() {
 	config := configs.LoadEnv()
-	dbConn := db.InitDB()
+	dbConn := postgres.InitDB()
 
 	router := gin.Default()
 
