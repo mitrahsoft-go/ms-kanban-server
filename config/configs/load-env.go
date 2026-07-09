@@ -1,6 +1,9 @@
 package configs
 
-import "strconv"
+import (
+	"os"
+	"strconv"
+)
 
 type Config struct {
 	Database DatabaseConfig
@@ -46,5 +49,5 @@ func LoadEnv() *Config {
 }
 
 func getEnv(key string) string {
-	return ""
+	return os.Getenv(key)
 }
