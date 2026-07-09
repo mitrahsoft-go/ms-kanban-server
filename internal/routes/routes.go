@@ -15,7 +15,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, config *configs.Config) {
 	repo := repository.InitRepositories(db)
 
 	// initialize services
-	service := services.InitRepositories(repo)
+	service := services.InitService(repo)
 
 	// initialize handlers
 	handlers.InitHandler(service)

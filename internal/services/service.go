@@ -5,7 +5,7 @@ import "github.com/ms-kanban-server/internal/repository"
 type Service interface {
 }
 
-func InitRepositories(repo repository.Repository) Service {
+func InitService(repo repository.Repository) Service {
 	return &service{
 		Repo: repo,
 	}
