@@ -1,6 +1,6 @@
 package handlers
 
-import "github.com/ms-kanban-server/api/services"
+import "github.com/ms-kanban-server/internal/services"
 
 func InitHandler(service services.Service) *handler {
 	return &handler{
