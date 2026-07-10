@@ -19,9 +19,12 @@ func InitDB(config *configs.Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect to the database: %w", err)
 	}
 
-	err = migration.AutoMigrate(dbConn) // Perform auto-migration for your models here
-	if err != nil {
-		return nil, fmt.Errorf("failed to auto-migrate the database: %w", err)
+	// Perform auto-migration for your models here
+	if config.Database.AutoMigrate == "true" {
+		err = migration.AutoMigrate(dbConn)
+		if err != nil {
+			return nil, fmt.Errorf("failed to auto-migrate the database: %w", err)
+		}
 	}
 
 	return dbConn, nil
