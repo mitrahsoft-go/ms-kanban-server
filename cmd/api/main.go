@@ -20,12 +20,13 @@ func main() {
 	// Initialize the logger
 	Logger, err := logger.InitLogger(config)
 	if err != nil {
-		log.Println("Failed to initialize logger:", err)
+		log.Fatal("Failed to initialize logger:", err)
 	}
+
 	// Initialize the database connection
 	dbConn, err := postgres.InitDB(config)
 	if err != nil {
-		Logger.Info("Failed to initialize database connection ",
+		Logger.Fatal("Failed to initialize database connection ",
 			zap.String("ERROR", err.Error()))
 	}
 
@@ -40,8 +41,7 @@ func main() {
 		zap.String("port", config.HTTP.Port))
 	err = router.Run(fmt.Sprintf(":%s", config.HTTP.Port))
 	if err != nil {
-		Logger.Info("Failed to start server ",
+		Logger.Fatal("Failed to start server ",
 			zap.String("ERROR", err.Error()))
-
 	}
 }
