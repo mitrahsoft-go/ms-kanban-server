@@ -29,5 +29,8 @@ func main() {
 
 	// Start the server
 	log.Println("Server is running on port", config.HTTP.Port)
-	router.Run(fmt.Sprintf(":%s", config.HTTP.Port))
+	err = router.Run(fmt.Sprintf(":%s", config.HTTP.Port))
+	if err != nil {
+		log.Fatal("Failed to start server:", err)
+	}
 }
