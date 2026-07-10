@@ -2,7 +2,6 @@ package configs
 
 import (
 	"os"
-	"strconv"
 )
 
 type Config struct {
@@ -12,38 +11,31 @@ type Config struct {
 
 type DatabaseConfig struct {
 	Host     string
-	Port     int
+	Port     string
 	Username string
 	Password string
 	Name     string
+	SSLMode  string
 }
 
 type HTTPConfig struct {
-	Port int
+	Port string
 }
 
-func LoadEnv() *Config {
-	// Load environment variables and populate the Config struct
-	portInt, err := strconv.Atoi(getEnv("DB_PORT"))
-	if err != nil {
-		panic("Invalid DB_PORT value")
-	}
-
-	httpPortInt, err := strconv.Atoi(getEnv("HTTP_PORT"))
-	if err != nil {
-		panic("Invalid HTTP_PORT value")
-	}
+// Load environment variables and populate the Config struct
+func LoadConfig() *Config {
 
 	return &Config{
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST"),
-			Port:     portInt,
+			Port:     getEnv("DB_PORT"),
 			Username: getEnv("DB_USERNAME"),
 			Password: getEnv("DB_PASSWORD"),
 			Name:     getEnv("DB_NAME"),
+			SSLMode:  getEnv("DB_SSLMODE"),
 		},
 		HTTP: HTTPConfig{
-			Port: httpPortInt,
+			Port: getEnv("HTTP_PORT"),
 		},
 	}
 }
