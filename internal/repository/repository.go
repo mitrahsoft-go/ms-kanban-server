@@ -1,16 +1,21 @@
 package repository
 
-import "gorm.io/gorm"
+import (
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+)
 
 type Repository interface {
 }
 
-func InitRepository(db *gorm.DB) Repository {
+func InitRepository(db *gorm.DB, logger *zap.Logger) Repository {
 	return &repository{
-		DB: db,
+		DB:     db,
+		logger: logger,
 	}
 }
 
 type repository struct {
-	DB *gorm.DB
+	DB     *gorm.DB
+	logger *zap.Logger
 }

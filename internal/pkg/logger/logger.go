@@ -7,9 +7,9 @@ import (
 	"go.uber.org/zap"
 )
 
-var Log *zap.Logger
-
 func InitLogger(config *configs.Config) (*zap.Logger, error) {
+
+	var Log *zap.Logger
 	var err error
 
 	if config.Logger.Type == "production" {

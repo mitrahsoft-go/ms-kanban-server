@@ -25,14 +25,15 @@ func main() {
 	// Initialize the database connection
 	dbConn, err := postgres.InitDB(config)
 	if err != nil {
-		Logger.Fatal(fmt.Sprintf("Failed to initialize database connection:%v", err))
+		Logger.Info("Failed to initialize database connection ",
+			zap.String("ERROR", err.Error()))
 	}
 
 	//Initialize the Gin router and set up routes
 	router := gin.Default()
 
 	// Set up routes
-	routes.SetupRoutes(router, dbConn)
+	routes.SetupRoutes(router, dbConn, Logger)
 
 	// Start the server
 	Logger.Info("Server is running",
