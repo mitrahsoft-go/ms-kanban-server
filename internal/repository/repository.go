@@ -5,7 +5,7 @@ import "gorm.io/gorm"
 type Repository interface {
 }
 
-func InitRepositories(db *gorm.DB) Repository {
+func InitRepository(db *gorm.DB) Repository {
 	return &repository{
 		DB: db,
 	}
