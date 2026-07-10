@@ -16,15 +16,18 @@ func main() {
 	config := configs.LoadEnv()
 
 	// Initialize the database connection
-	dbConn := postgres.InitDB()
+	dbConn, err := postgres.InitDB(config)
+	if err != nil {
+		log.Fatal("Failed to initialize database connection:", err)
+	}
 
 	//Initialize the Gin router and set up routes
 	router := gin.Default()
 
 	// Set up routes
-	routes.SetupRoutes(router, dbConn, config)
+	routes.SetupRoutes(router, dbConn)
 
 	// Start the server
 	log.Println("Server is running on port", config.HTTP.Port)
-	router.Run(fmt.Sprintf(":%d", config.HTTP.Port))
+	router.Run(fmt.Sprintf(":%s", config.HTTP.Port))
 }
