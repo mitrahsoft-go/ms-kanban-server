@@ -46,6 +46,7 @@ func main() {
 		Database: dbConn,
 		Router:   router,
 		Redis:    redisClient,
+		Logger:   Logger,
 	}
 	// Set up routes
 	routes.SetupRoutes(deps, config)
