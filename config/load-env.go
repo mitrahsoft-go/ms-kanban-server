@@ -7,8 +7,8 @@ import (
 type Config struct {
 	Database DatabaseConfig
 	HTTP     HTTPConfig
-	Redis    RedisConfig
 	Logger   LoggerConfig
+	Redis    RedisConfig
 }
 
 type DatabaseConfig struct {
@@ -21,6 +21,12 @@ type DatabaseConfig struct {
 	AutoMigrate string
 }
 
+type RedisConfig struct {
+	Host string
+	Port string
+	Password string
+}
+
 type HTTPConfig struct {
 	Port string
 }
@@ -28,12 +34,6 @@ type HTTPConfig struct {
 type LoggerConfig struct {
 	Type  string
 	Level string
-}
-
-type RedisConfig struct {
-	Host     string
-	Port     string
-	Password string
 }
 
 func LoadEnv() *Config {
@@ -51,16 +51,7 @@ func LoadEnv() *Config {
 			AutoMigrate: getEnv("DB_AUTOMIGRATE", "false"),
 		},
 		HTTP: HTTPConfig{
-			Port: getEnv("HTTP_PORT", "6369"),
-		},
-		Logger: LoggerConfig{
-			Type:  getEnv("LOGGER_TYPE", "development"),
-			Level: getEnv("LOGGER_LEVEL", "debug"),
-		},
-		Redis: RedisConfig{
-			Host:     getEnv("REDIS_HOST", "localhost"),
-			Port:     getEnv("REDIS_PORT", "6379"),
-			Password: getEnv("REDIS_PASSWORD", ""),
+			Port: getEnv("HTTP_PORT","6369"),
 		},
 	}
 }

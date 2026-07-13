@@ -29,3 +29,4 @@ func InitDB(config *configs.Config) (*gorm.DB, error) {
 
 	return dbConn, nil
 }
+

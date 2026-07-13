@@ -7,7 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ms-kanban-server/config/configs"
 	"github.com/ms-kanban-server/drivers/postgres"
+	"github.com/ms-kanban-server/drivers/redis"
 	"github.com/ms-kanban-server/internal/pkg/logger"
+	"github.com/ms-kanban-server/internal/pkg/models"
 	"github.com/ms-kanban-server/internal/routes"
 	"go.uber.org/zap"
 )
@@ -20,28 +22,40 @@ func main() {
 	// Initialize the logger
 	Logger, err := logger.InitLogger(config)
 	if err != nil {
-		log.Fatal("Failed to initialize logger:", err)
+		log.Fatal("Failed to initialize logger :", err)
 	}
 
 	// Initialize the database connection
 	dbConn, err := postgres.InitDB(config)
 	if err != nil {
-		Logger.Fatal("Failed to initialize database connection ",
-			zap.String("ERROR", err.Error()))
+		Logger.Fatal("Failed to initialize database connection :",
+			zap.String("ERROR : ", err.Error()))
+	}
+
+	// Initialize the RedisClient
+	redisClient, err := redis.InitRedisClient(config)
+	if err != nil {
+		Logger.Fatal("Failed to initialize Redis client:",
+			zap.String("ERROR : ", err.Error()))
 	}
 
 	//Initialize the Gin router and set up routes
 	router := gin.Default()
 
+	conn := models.Config{
+		Database: dbConn,
+		Router:   router,
+		Redis:    redisClient,
+	}
 	// Set up routes
-	routes.SetupRoutes(router, dbConn, Logger)
+	routes.SetupRoutes(conn, config)
 
 	// Start the server
 	Logger.Info("Server is running",
-		zap.String("port", config.HTTP.Port))
+		zap.String("port ", config.HTTP.Port))
 	err = router.Run(fmt.Sprintf(":%s", config.HTTP.Port))
 	if err != nil {
 		Logger.Fatal("Failed to start server ",
-			zap.String("ERROR", err.Error()))
+			zap.String("ERROR : ", err.Error()))
 	}
 }
