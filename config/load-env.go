@@ -1,4 +1,4 @@
-package configs
+package config
 
 import (
 	"os"
@@ -7,6 +7,7 @@ import (
 type Config struct {
 	Database DatabaseConfig
 	HTTP     HTTPConfig
+	Redis    RedisConfig
 	Logger   LoggerConfig
 }
 
@@ -29,6 +30,12 @@ type LoggerConfig struct {
 	Level string
 }
 
+type RedisConfig struct {
+	Host     string
+	Port     string
+	Password string
+}
+
 func LoadEnv() *Config {
 
 	// Load environment variables and populate the Config struct
@@ -49,6 +56,11 @@ func LoadEnv() *Config {
 		Logger: LoggerConfig{
 			Type:  getEnv("LOGGER_TYPE", "development"),
 			Level: getEnv("LOGGER_LEVEL", "debug"),
+		},
+		Redis: RedisConfig{
+			Host:     getEnv("REDIS_HOST", "localhost"),
+			Port:     getEnv("REDIS_PORT", "6379"),
+			Password: getEnv("REDIS_PASSWORD", ""),
 		},
 	}
 }

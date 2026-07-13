@@ -3,7 +3,7 @@ package postgres
 import (
 	"fmt"
 
-	"github.com/ms-kanban-server/config/configs"
+	configs "github.com/ms-kanban-server/config"
 	"github.com/ms-kanban-server/drivers/migration"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
