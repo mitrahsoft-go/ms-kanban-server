@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ms-kanban-server/config/configs"
+	"github.com/ms-kanban-server/config"
 	"github.com/ms-kanban-server/drivers/redis"
 	handlers "github.com/ms-kanban-server/internal/handlers/http"
 	"github.com/ms-kanban-server/internal/pkg/models"
@@ -12,27 +12,25 @@ import (
 	"github.com/ms-kanban-server/internal/services"
 )
 
-const appVersion = "1.0.0"
-
-func SetupRoutes(conn models.Config, cfg *configs.Config) {
+func SetupRoutes(deps models.Config, cfg *config.Config) {
 	// initialize repositories
-	repo := repository.InitRepository(conn.Database, conn.Logger)
+	repo := repository.InitRepository(deps.Database, deps.Logger)
 
 	// initialize services
-	service := services.InitService(repo, conn.Logger)
+	service := services.InitService(repo, deps.Logger)
 
 	// initialize handlers
-	handlers.InitHandler(service, conn.Logger)
+	handlers.InitHandler(service, deps.Logger)
 
 	// Health endpoint for liveness checks and readiness validation
-	conn.Router.GET("/health", func(c *gin.Context) {
+	deps.Router.GET("/health", func(c *gin.Context) {
 		timestamp := time.Now().UTC().Format(time.RFC3339)
 		full := c.Query("full") == "true"
 
 		if !full {
 			c.JSON(200, gin.H{
 				"status":    "healthy",
-				"version":   appVersion,
+				"version":   "v1",
 				"timestamp": timestamp,
 			})
 			return
@@ -45,7 +43,7 @@ func SetupRoutes(conn models.Config, cfg *configs.Config) {
 		statusCode := 200
 
 		// Check database connection
-		sqlDB, err := conn.Database.DB()
+		sqlDB, err := deps.Database.DB()
 		if err != nil {
 			dependencies["database"] = "unhealthy"
 			statusCode = 503
@@ -55,7 +53,7 @@ func SetupRoutes(conn models.Config, cfg *configs.Config) {
 		}
 
 		// Check Redis connection
-		if err := redis.PingRedis(conn.Redis); err != nil {
+		if err := redis.PingRedis(deps.Redis); err != nil {
 			dependencies["redis"] = "unhealthy"
 			statusCode = 503
 		}
@@ -67,7 +65,7 @@ func SetupRoutes(conn models.Config, cfg *configs.Config) {
 
 		c.JSON(statusCode, gin.H{
 			"status":       status,
-			"version":      appVersion,
+			"version":      "v1",
 			"timestamp":    timestamp,
 			"dependencies": dependencies,
 		})

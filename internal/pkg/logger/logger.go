@@ -3,11 +3,11 @@ package logger
 import (
 	"fmt"
 
-	"github.com/ms-kanban-server/config/configs"
+	"github.com/ms-kanban-server/config"
 	"go.uber.org/zap"
 )
 
-func InitLogger(config *configs.Config) (*zap.Logger, error) {
+func InitLogger(config *config.Config) (*zap.Logger, error) {
 
 	var Log *zap.Logger
 	var err error

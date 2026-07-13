@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ms-kanban-server/config/configs"
+	"github.com/ms-kanban-server/config"
 	"github.com/ms-kanban-server/drivers/postgres"
 	"github.com/ms-kanban-server/drivers/redis"
 	"github.com/ms-kanban-server/internal/pkg/logger"
@@ -17,7 +17,7 @@ import (
 func main() {
 
 	// Load configuration, initialize database connection, set up routes, and start the server
-	config := configs.LoadEnv()
+	config := config.LoadEnv()
 
 	// Initialize the logger
 	Logger, err := logger.InitLogger(config)
@@ -42,13 +42,13 @@ func main() {
 	//Initialize the Gin router and set up routes
 	router := gin.Default()
 
-	conn := models.Config{
+	deps := models.Config{
 		Database: dbConn,
 		Router:   router,
 		Redis:    redisClient,
 	}
 	// Set up routes
-	routes.SetupRoutes(conn, config)
+	routes.SetupRoutes(deps, config)
 
 	// Start the server
 	Logger.Info("Server is running",

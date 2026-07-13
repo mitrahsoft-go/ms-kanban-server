@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ms-kanban-server/config/configs"
+	"github.com/ms-kanban-server/config"
 	"github.com/redis/go-redis/v9"
 )
 
-func InitRedisClient(cfg *configs.Config) (*redis.Client, error) {
+func InitRedisClient(cfg *config.Config) (*redis.Client, error) {
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port),
