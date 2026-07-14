@@ -24,7 +24,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to initialize logger :", err)
 	} else {
-		Logger.Info("Initialize the Logger")
+		Logger.Info("Initialized the Logger")
 	}
 
 	// Initialize the database connection
@@ -33,7 +33,7 @@ func main() {
 		Logger.Fatal("Failed to initialize database connection :",
 			zap.String("ERROR : ", err.Error()))
 	} else {
-		Logger.Info("Initialize the Database Connection",
+		Logger.Info("Initialized the Database Connection",
 			zap.String("port :", "5433"))
 	}
 
@@ -43,7 +43,7 @@ func main() {
 		Logger.Error("Failed to initialize Redis client:",
 			zap.String("ERROR : ", err.Error()))
 	} else {
-		Logger.Info("Initialize the RedisClient",
+		Logger.Info("Initialized the RedisClient",
 			zap.String("port :", "6379"))
 	}
 

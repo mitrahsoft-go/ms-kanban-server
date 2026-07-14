@@ -24,13 +24,14 @@ func ValidatedPassword(password string) bool {
 	return emailRegex.MatchString(password)
 }
 
-func HashPassword(password string) (int, string, *response.Error) {
+func HashPassword(password string) (string, *response.Error) {
 
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		errorResponse := response.Error{
-			Code:    response.ErrInternalServerError,
-			Message: "InternalServerError",
+			Code:       response.ErrInternalServerError,
+			Message:    "InternalServerError in Utils",
+			StatusCode: http.StatusInternalServerError,
 			Details: []response.Details{
 				{
 					Field:   "Password",
@@ -38,9 +39,9 @@ func HashPassword(password string) (int, string, *response.Error) {
 				},
 			},
 		}
-		return http.StatusInternalServerError, "", &errorResponse
+		return "", &errorResponse
 	}
-	return http.StatusOK, string(bytes), nil
+	return string(bytes), nil
 }
 
 func StringToUUID(idStr string) (uuid.UUID, *response.Error) {
@@ -51,8 +52,9 @@ func StringToUUID(idStr string) (uuid.UUID, *response.Error) {
 	id, err := uuid.FromString(idStr)
 	if err != nil {
 		errorResponse := response.Error{
-			Code:    response.ErrBadRequest,
-			Message: "Invalid Format",
+			Code:       response.ErrBadRequest,
+			StatusCode: http.StatusBadRequest,
+			Message:    "Invalid Format in Utils",
 			Details: []response.Details{
 				{
 					Field:   "ID",

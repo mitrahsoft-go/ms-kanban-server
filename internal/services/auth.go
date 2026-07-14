@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -15,8 +14,8 @@ import (
 )
 
 type Service interface {
-	SignIn(credentials dto.SignInRequest) (uuid.UUID, int, string, *response.Error)
-	SignUp(credentials dto.SignUpRequest) (int, *response.Error)
+	SignIn(credentials dto.SignInRequest) (uuid.UUID, string, *response.Error)
+	SignUp(credentials dto.SignUpRequest) *response.Error
 }
 
 func InitAuthService(repo repository.Repository, logger *zap.Logger) Service {
@@ -31,22 +30,21 @@ type authservice struct {
 	logger *zap.Logger
 }
 
-func (s *authservice) SignIn(credentials dto.SignInRequest) (uuid.UUID, int, string, *response.Error) {
+func (s *authservice) SignIn(credentials dto.SignInRequest) (uuid.UUID, string, *response.Error) {
 
-	result, code, err := s.Repo.SignIn(credentials.Email)
+	result, err := s.Repo.SignIn(credentials.Email)
 	if err != nil {
-		s.logger.Error("Error occurred during SignIn in service layer",
-			zap.String("Email", credentials.Email))
-		return uuid.Nil, code, "", err
+		return uuid.Nil, "", err
 	}
 
 	if utils.IsValidPassword(result.PasswordHash, credentials.Password) {
 
 		s.logger.Error(" Validated failure in Password before login in service layer",
 			zap.String("Email", credentials.Email))
-		return uuid.Nil, code, "", &response.Error{
-			Code:    response.ErrUnauthorized,
-			Message: "Enter valid Email or Password before login",
+		return uuid.Nil, "", &response.Error{
+			Code:       response.ErrUnauthorized,
+			StatusCode: http.StatusUnauthorized,
+			Message:    "Enter valid Email or Password before login",
 			Details: []response.Details{
 				{
 					Field:   "Email/Password",
@@ -55,19 +53,20 @@ func (s *authservice) SignIn(credentials dto.SignInRequest) (uuid.UUID, int, str
 			},
 		}
 	}
-	return result.ID, http.StatusOK, string(result.Role), nil
+	return result.ID, string(result.Role), nil
 }
 
-func (s *authservice) SignUp(credentials dto.SignUpRequest) (int, *response.Error) {
+func (s *authservice) SignUp(credentials dto.SignUpRequest) *response.Error {
 
 	validate := validator.New()
 	err := validate.Struct(credentials)
 	if err != nil {
 		s.logger.Error(" Validated failure in Email/Password before login in service layer",
 			zap.String("Email", credentials.Email), zap.Error(err))
-		return http.StatusBadRequest, &response.Error{
-			Code:    response.ErrBadRequest,
-			Message: "BadRequest",
+		return &response.Error{
+			Code:       response.ErrBadRequest,
+			StatusCode: http.StatusBadRequest,
+			Message:    "BadRequest",
 			Details: []response.Details{
 				{
 					Field:   "Email/Password",
@@ -80,9 +79,10 @@ func (s *authservice) SignUp(credentials dto.SignUpRequest) (int, *response.Erro
 	if utils.ValidatedPassword(credentials.Password) {
 		s.logger.Error("Validated failure in Password before login in service layer",
 			zap.String("Email", credentials.Email), zap.Error(err))
-		return http.StatusBadRequest, &response.Error{
-			Code:    response.ErrBadRequest,
-			Message: "BadRequest",
+		return &response.Error{
+			Code:       response.ErrBadRequest,
+			StatusCode: http.StatusBadRequest,
+			Message:    "BadRequest",
 			Details: []response.Details{
 				{
 					Field:   "Password",
@@ -93,13 +93,12 @@ func (s *authservice) SignUp(credentials dto.SignUpRequest) (int, *response.Erro
 
 	}
 
-	code, passwordhash, errorResponse := utils.HashPassword(credentials.Password)
+	passwordhash, errorResponse := utils.HashPassword(credentials.Password)
 	if errorResponse != nil {
-		s.logger.Error("Error occurred while hashing password in service layer",
-			zap.String("Email", credentials.Email), zap.Error(fmt.Errorf("%v", errorResponse)))
-		return code, &response.Error{
-			Code:    response.ErrBadRequest,
-			Message: "BadRequest",
+		return &response.Error{
+			Code:       response.ErrBadRequest,
+			StatusCode: errorResponse.StatusCode,
+			Message:    "BadRequest",
 			Details: []response.Details{
 				{
 					Field:   "Password",
@@ -107,13 +106,6 @@ func (s *authservice) SignUp(credentials dto.SignUpRequest) (int, *response.Erro
 				},
 			},
 		}
-	}
-
-	organizationID, errorResponse := utils.StringToUUID(credentials.OrganizationID)
-	if errorResponse != nil {
-		s.logger.Error("Error occurred while parsing organizationID in service layer",
-			zap.String("Email", credentials.Email), zap.Error(fmt.Errorf("%v", errorResponse)))
-		return http.StatusBadRequest, errorResponse
 	}
 
 	result := models.User{
@@ -123,6 +115,29 @@ func (s *authservice) SignUp(credentials dto.SignUpRequest) (int, *response.Erro
 		FullName:     credentials.FullName,
 		AvatarURL:    credentials.AvatarURL,
 		Timezone:     credentials.Timezone,
+	}
+
+	role := dto.Role(credentials.Role)
+
+	if err := role.Validate(); err != nil {
+		s.logger.Error(" Invalid role  in service layer",
+			zap.String("Role", string(credentials.Role)), zap.Error(err))
+		return &response.Error{
+			Code:       response.ErrBadRequest,
+			StatusCode: http.StatusBadRequest,
+			Message:    "BadRequest",
+			Details: []response.Details{
+				{
+					Field:   "Role",
+					Message: "Invalid role",
+				},
+			},
+		}
+	}
+
+	organizationID, errorResponse := utils.StringToUUID(credentials.OrganizationID)
+	if errorResponse != nil {
+		return errorResponse
 	}
 
 	if organizationID != uuid.Nil {

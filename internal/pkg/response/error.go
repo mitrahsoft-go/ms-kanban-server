@@ -18,9 +18,10 @@ const (
 )
 
 type Error struct {
-	Code    ErrorCode `json:"code"`
-	Message string    `json:"message"`
-	Details []Details `json:"details,omitempty"`
+	Code       ErrorCode `json:"code"`
+	StatusCode int       `json:"status_code"`
+	Message    string    `json:"message"`
+	Details    []Details `json:"details,omitempty"`
 }
 
 type Details struct {

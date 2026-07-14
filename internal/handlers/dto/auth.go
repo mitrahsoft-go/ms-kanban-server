@@ -1,5 +1,7 @@
 package dto
 
+import "fmt"
+
 type Role string
 
 const (
@@ -19,8 +21,21 @@ type SignUpRequest struct {
 	Email          string  `json:"email" validate:"required,email"`
 	Password       string  `json:"password" validate:"required"`
 	FullName       string  `json:"full_name" validate:"required"`
-	OrganizationID string  `json:"organization_id,omitzero"`
+	OrganizationID string  `json:"organization_id,omitempty"`
 	Role           Role    `json:"role" gorm:"size:30"`
 	AvatarURL      *string `json:"avatar_url" gorm:"size:255"`
 	Timezone       string  `json:"timezone" gorm:"size:50;default:'UTC'"`
+}
+
+func (r Role) Validate() error {
+	switch r {
+	case RoleSuperAdmin,
+		RoleOrgAdmin,
+		RoleProjectManager,
+		RoleDeveloper,
+		RoleViewer:
+		return nil
+	default:
+		return fmt.Errorf("invalid role: %s", r)
+	}
 }

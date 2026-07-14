@@ -33,14 +33,15 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 		errorResponse := &response.ErrorResponse{
 			Success: false,
 			Error: response.Error{
-				Code:    response.ErrBadRequest,
-				Message: "Invalid request payload",
+				Code:       response.ErrBadRequest,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid request payload in Handler Layer",
 				Details: []response.Details{
 					{Field: "body", Message: err.Error()},
 				},
 			},
 		}
-		g.JSON(http.StatusBadRequest, errorResponse)
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}
 
@@ -50,20 +51,21 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 		for _, fieldErr := range err.(validator.ValidationErrors) {
 			details = append(details, response.Details{
 				Field:   fieldErr.Field(),
-				Message: fmt.Sprintf("failed on '%s' validation", fieldErr.Tag()),
+				Message: fmt.Sprintf("failed on '%s' validation in Handler Layer", fieldErr.Tag()),
 			})
 		}
 
 		errorResponse := &response.ErrorResponse{
 			Success: false,
 			Error: response.Error{
-				Code:    response.ErrValidation,
-				Message: "Validation failed",
-				Details: details,
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Validation failed in Handler Layer",
+				Details:    details,
 			},
 		}
 
-		g.JSON(http.StatusBadRequest, errorResponse)
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}
 
@@ -71,8 +73,9 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 		errorResponse := &response.ErrorResponse{
 			Success: false,
 			Error: response.Error{
-				Code:    response.ErrValidation,
-				Message: "Validation failed",
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Validation failed in Handler Layer",
 				Details: []response.Details{
 					{
 						Field:   "password",
@@ -81,13 +84,13 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 				},
 			},
 		}
-		g.JSON(http.StatusBadRequest, errorResponse)
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}
 
-	code, err := h.service.SignUp(payload)
+	err := h.service.SignUp(payload)
 	if err != nil {
-		g.JSON(code, err)
+		g.JSON(err.StatusCode, err)
 		return
 	}
 
@@ -97,7 +100,7 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 		Success:    true,
 	}
 
-	g.JSON(http.StatusCreated, successResponse)
+	g.JSON(successResponse.StatusCode, successResponse)
 
 }
 
@@ -109,15 +112,16 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 		errorResponse := &response.ErrorResponse{
 			Success: false,
 			Error: response.Error{
-				Code:    response.ErrBadRequest,
-				Message: "Failed converting json to struct",
+				Code:       response.ErrBadRequest,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Failed converting json to struct in Handler Layer",
 				Details: []response.Details{
 					{Field: "body", Message: err.Error()},
 				},
 			},
 		}
 
-		g.JSON(http.StatusBadRequest, errorResponse)
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}
 
@@ -127,25 +131,26 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 		for _, fieldErr := range err.(validator.ValidationErrors) {
 			details = append(details, response.Details{
 				Field:   fieldErr.Field(),
-				Message: fmt.Sprintf("failed on '%s' validation", fieldErr.Tag()),
+				Message: fmt.Sprintf("failed on '%s' validation in Handler Layer", fieldErr.Tag()),
 			})
 		}
 
 		errorResponse := &response.ErrorResponse{
 			Success: false,
 			Error: response.Error{
-				Code:    response.ErrValidation,
-				Message: "Validation failed",
-				Details: details,
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Validation failed",
+				Details:    details,
 			},
 		}
-		g.JSON(http.StatusBadRequest, errorResponse)
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}
 
-	_, code, _, err := h.service.SignIn(loginCredentials)
+	_, _, err := h.service.SignIn(loginCredentials)
 	if err != nil {
-		g.JSON(code, err)
+		g.JSON(err.StatusCode, err)
 		return
 	}
 
@@ -155,5 +160,5 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 		Success:    true,
 	}
 
-	g.JSON(http.StatusOK, successResponse)
+	g.JSON(successResponse.StatusCode, successResponse)
 }

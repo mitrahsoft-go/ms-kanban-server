@@ -13,9 +13,9 @@ func InitLogger(config *config.Config) (*zap.Logger, error) {
 	var err error
 
 	if config.Logger.Type == "production" {
-		Log, err = zap.NewProduction()
+		Log, err = zap.NewProduction(zap.AddStacktrace(zap.DPanicLevel))
 	} else {
-		Log, err = zap.NewDevelopment()
+		Log, err = zap.NewDevelopment(zap.AddStacktrace(zap.DPanicLevel))
 	}
 
 	if err != nil {

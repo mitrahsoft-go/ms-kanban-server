@@ -11,8 +11,8 @@ import (
 )
 
 type Repository interface {
-	SignIn(email string) (models.User, int, *response.Error)
-	SignUp(row models.User) (int, *response.Error)
+	SignIn(email string) (models.User, *response.Error)
+	SignUp(row models.User) *response.Error
 }
 
 func InitAuthRepository(db *gorm.DB, logger *zap.Logger) Repository {
@@ -27,7 +27,7 @@ type authdatabase struct {
 	logger *zap.Logger
 }
 
-func (d *authdatabase) SignIn(email string) (models.User, int, *response.Error) {
+func (d *authdatabase) SignIn(email string) (models.User, *response.Error) {
 
 	var row models.User
 
@@ -36,8 +36,9 @@ func (d *authdatabase) SignIn(email string) (models.User, int, *response.Error) 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			errorResponse := response.Error{
-				Code:    response.ErrUnauthorized,
-				Message: "Enter valid Email or Password before login",
+				Code:       response.ErrUnauthorized,
+				StatusCode: http.StatusUnauthorized,
+				Message:    "Enter valid Email or Password before login",
 				Details: []response.Details{
 					{
 						Field:   "Email/Password",
@@ -47,11 +48,12 @@ func (d *authdatabase) SignIn(email string) (models.User, int, *response.Error) 
 			}
 			d.logger.Error("User not found in database in Repository layer",
 				zap.String("Email", email), zap.Error(err))
-			return models.User{}, http.StatusUnauthorized, &errorResponse
+			return models.User{}, &errorResponse
 		}
 		errorResponse := response.Error{
-			Code:    response.ErrInternalServerError,
-			Message: "InternalServerError",
+			Code:       response.ErrInternalServerError,
+			StatusCode: http.StatusInternalServerError,
+			Message:    "InternalServerError",
 			Details: []response.Details{
 				{
 					Field:   "Database",
@@ -61,18 +63,19 @@ func (d *authdatabase) SignIn(email string) (models.User, int, *response.Error) 
 		}
 		d.logger.Error("Database error occurred in Repository layer",
 			zap.String("Email", email), zap.Error(err))
-		return models.User{}, http.StatusInternalServerError, &errorResponse
+		return models.User{}, &errorResponse
 	}
 
-	return row, http.StatusOK, nil
+	return row, nil
 }
 
-func (d *authdatabase) SignUp(row models.User) (int, *response.Error) {
+func (d *authdatabase) SignUp(row models.User) *response.Error {
 
 	if err := d.DB.Create(&row).Error; err != nil {
 		errorResponse := response.Error{
-			Code:    response.ErrInternalServerError,
-			Message: "Failed to Register",
+			Code:       response.ErrInternalServerError,
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to Register",
 			Details: []response.Details{
 				{
 					Field:   "Database",
@@ -82,8 +85,8 @@ func (d *authdatabase) SignUp(row models.User) (int, *response.Error) {
 		}
 		d.logger.Error("Database error occurred in Repository layer",
 			zap.Error(err))
-		return http.StatusInternalServerError, &errorResponse
+		return &errorResponse
 	}
 
-	return http.StatusCreated, nil
+	return nil
 }
