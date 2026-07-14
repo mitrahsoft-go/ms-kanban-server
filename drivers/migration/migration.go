@@ -1,9 +1,20 @@
 package migration
 
-import "gorm.io/gorm"
+import (
+	"github.com/ms-kanban-server/internal/pkg/models"
+	"gorm.io/gorm"
+)
 
 func AutoMigrate(dbConn *gorm.DB) error {
 	// Perform auto-migration for your models here
-	// Example: dbConn.AutoMigrate(&YourModel{})
+
+	err := dbConn.AutoMigrate(
+		&models.Organization{},
+		&models.User{},
+	)
+	if err != nil {
+		return err
+	}
+	
 	return nil
 }

@@ -15,7 +15,6 @@ func InitRedisClient(cfg *config.Config) (*redis.Client, error) {
 		Password: cfg.Redis.Password,
 		DB:       0,
 	})
-	defer rdb.Close()
 
 	// The client Ping method sends the real Redis PING command
 	err := PingRedis(rdb)
