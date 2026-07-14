@@ -20,7 +20,6 @@ type AuthTokensResponse struct {
 	RefreshExpiresIn int    `json:"refresh_expires_in"`
 }
 
-
 type SignInRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
@@ -28,6 +27,7 @@ type SignInRequest struct {
 
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
+	UserID       string `json:"user_id" validate:"required"`
 }
 
 type SignUpRequest struct {

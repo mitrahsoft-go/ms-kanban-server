@@ -125,18 +125,25 @@ func generateRefreshTokenValue() (string, error) {
 }
 
 func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.AuthTokensResponse, *response.Error) {
-	
-	hashedRefreshToken, hashErr := utils.HashPassword(credentials.RefreshToken)
-	if hashErr != nil {
-		return nil, hashErr
-	}
 
-	storedToken, err := s.Repo.GetRefreshToken(hashedRefreshToken)
+	oldToken, err := s.Repo.GetRefreshToken(credentials.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	if time.Now().After(storedToken.ExpiresAt) {
+	if !utils.IsValidPassword(oldToken.TokenHash, credentials.RefreshToken) {
+		return nil, &response.Error{
+			Code:       response.ErrUnauthorized,
+			StatusCode: http.StatusUnauthorized,
+			Message:    "Wrong Refresh",
+			Details: []response.Details{{
+				Field:   "refresh_token",
+				Message: "The refresh token is wrong, Give correct refresh token",
+			}},
+		}
+	}
+
+	if time.Now().After(oldToken.ExpiresAt) {
 		return nil, &response.Error{
 			Code:       response.ErrUnauthorized,
 			StatusCode: http.StatusUnauthorized,
@@ -148,7 +155,7 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 		}
 	}
 
-	user, userErr := s.Repo.SignInByID(storedToken.UserID)
+	user, userErr := s.Repo.SignInByID(oldToken.UserID)
 	if userErr != nil {
 		return nil, userErr
 	}
@@ -174,7 +181,7 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 		RefreshToken:     credentials.RefreshToken,
 		TokenType:        "Bearer",
 		ExpiresIn:        900,
-		RefreshExpiresIn: int(time.Until(storedToken.ExpiresAt).Seconds()),
+		RefreshExpiresIn: int(time.Until(oldToken.ExpiresAt).Seconds()),
 	}, nil
 }
 
