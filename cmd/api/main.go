@@ -34,7 +34,7 @@ func main() {
 			zap.String("ERROR : ", err.Error()))
 	} else {
 		Logger.Info("Initialized the Database Connection",
-			zap.String("port :", "5433"))
+			zap.String("port :", config.Database.Port))
 	}
 
 	// Initialize the RedisClient
@@ -44,7 +44,7 @@ func main() {
 			zap.String("ERROR : ", err.Error()))
 	} else {
 		Logger.Info("Initialized the RedisClient",
-			zap.String("port :", "6379"))
+			zap.String("port :", config.Redis.Port))
 	}
 
 	//Initialize the Gin router and set up routes

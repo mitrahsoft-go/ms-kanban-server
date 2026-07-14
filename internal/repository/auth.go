@@ -32,7 +32,6 @@ func (d *authdatabase) SignIn(email string) (models.User, *response.Error) {
 	var row models.User
 
 	err := d.DB.Where("email = ?", email).First(&row).Error
-
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			errorResponse := response.Error{
@@ -50,17 +49,18 @@ func (d *authdatabase) SignIn(email string) (models.User, *response.Error) {
 				zap.String("Email", email), zap.Error(err))
 			return models.User{}, &errorResponse
 		}
+
 		errorResponse := response.Error{
 			Code:       response.ErrInternalServerError,
 			StatusCode: http.StatusInternalServerError,
 			Message:    "InternalServerError",
 			Details: []response.Details{
 				{
-					Field:   "Database",
-					Message: "Database error : " + err.Error(),
+					Message: "Failed to Login : " + err.Error(),
 				},
 			},
 		}
+
 		d.logger.Error("Database error occurred in Repository layer",
 			zap.String("Email", email), zap.Error(err))
 		return models.User{}, &errorResponse
@@ -78,11 +78,11 @@ func (d *authdatabase) SignUp(row models.User) *response.Error {
 			Message:    "Failed to Register",
 			Details: []response.Details{
 				{
-					Field:   "Database",
 					Message: "Failed inserting the row : " + err.Error(),
 				},
 			},
 		}
+
 		d.logger.Error("Database error occurred in Repository layer",
 			zap.Error(err))
 		return &errorResponse
