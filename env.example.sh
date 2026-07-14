@@ -17,3 +17,6 @@ export LOGGER_LEVEL=debug #Info, Debug, Error, Warn, Fatal, Panic
 export REDIS_HOST=localhost
 export REDIS_PORT=6379
 export REDIS_PASSWORD= # Your Password 
+
+# JWT Key
+export JWT_SECRET_KEY = # Your Key 

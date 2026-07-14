@@ -1,11 +1,15 @@
 package services
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"net/http"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofrs/uuid"
 	"github.com/ms-kanban-server/internal/handlers/dto"
+	"github.com/ms-kanban-server/internal/middleware"
 	"github.com/ms-kanban-server/internal/pkg/models"
 	"github.com/ms-kanban-server/internal/pkg/response"
 	"github.com/ms-kanban-server/internal/pkg/utils"
@@ -14,7 +18,8 @@ import (
 )
 
 type Service interface {
-	SignIn(credentials dto.SignInRequest) (uuid.UUID, string, *response.Error)
+	SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResponse, *response.Error)
+	RefreshToken(credentials dto.RefreshTokenRequest) (*dto.AuthTokensResponse, *response.Error)
 	SignUp(credentials dto.SignUpRequest) *response.Error
 }
 
@@ -30,30 +35,147 @@ type authservice struct {
 	logger *zap.Logger
 }
 
-func (s *authservice) SignIn(credentials dto.SignInRequest) (uuid.UUID, string, *response.Error) {
+func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResponse, *response.Error) {
 
 	result, err := s.Repo.SignIn(credentials.Email)
 	if err != nil {
-		return uuid.Nil, "", err
+		s.logger.Warn("Login failed during user lookup",
+			zap.String("email", credentials.Email),
+			zap.String("error", err.Message))
+		return nil, err
+	}
+
+	if !result.IsActive {
+		s.logger.Warn("Login rejected for inactive user",
+			zap.String("email", credentials.Email))
+		return nil, &response.Error{
+			Code:       response.ErrForbidden,
+			StatusCode: http.StatusForbidden,
+			Message:    "Account is inactive",
+			Details: []response.Details{{
+				Field:   "account",
+				Message: "The account is deactivated or locked",
+			}},
+		}
 	}
 
 	if utils.IsValidPassword(result.PasswordHash, credentials.Password) {
-
-		s.logger.Error(" Validated failure in Password before login in service layer",
-			zap.String("Email", credentials.Email))
-		return uuid.Nil, "", &response.Error{
+		s.logger.Warn("Login failed due to invalid credentials",
+			zap.String("email", credentials.Email))
+		return nil, &response.Error{
 			Code:       response.ErrUnauthorized,
 			StatusCode: http.StatusUnauthorized,
-			Message:    "Enter valid Email or Password before login",
-			Details: []response.Details{
-				{
-					Field:   "Email/Password",
-					Message: "User not found :" + credentials.Email,
-				},
-			},
+			Message:    "Email or password is incorrect",
+			Details: []response.Details{{
+				Field:   "credentials",
+				Message: "The provided email or password is invalid",
+			}},
 		}
 	}
-	return result.ID, string(result.Role), nil
+
+	accessToken, tokenErr := middleware.GenerateJWT(result.Role, result.ID, s.logger)
+	if tokenErr != nil {
+		return nil, tokenErr
+	}
+
+	refreshTokenValue, refreshTokenErr := generateRefreshTokenValue()
+	if refreshTokenErr != nil {
+		return nil, &response.Error{
+			Code:       response.ErrInternalServerError,
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to create refresh token",
+			Details: []response.Details{{
+				Field:   "refresh_token",
+				Message: refreshTokenErr.Error(),
+			}},
+		}
+	}
+
+	hashedRefreshToken, hashErr := utils.HashPassword(refreshTokenValue)
+	if hashErr != nil {
+		return nil, hashErr
+	}
+
+	expiresAt := time.Now().Add(7 * 24 * time.Hour)
+	userID := uint(1)
+	storeErr := s.Repo.StoreRefreshToken(models.RefreshToken{
+		UserID:    userID,
+		TokenHash: hashedRefreshToken,
+		ExpiresAt: expiresAt,
+	})
+	if storeErr != nil {
+		return nil, storeErr
+	}
+
+	return &dto.AuthTokensResponse{
+		AccessToken:      accessToken,
+		RefreshToken:     refreshTokenValue,
+		TokenType:        "Bearer",
+		ExpiresIn:        900,
+		RefreshExpiresIn: 3600,
+	}, nil
+}
+
+func generateRefreshTokenValue() (string, error) {
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
+}
+
+func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.AuthTokensResponse, *response.Error) {
+	
+	hashedRefreshToken, hashErr := utils.HashPassword(credentials.RefreshToken)
+	if hashErr != nil {
+		return nil, hashErr
+	}
+
+	storedToken, err := s.Repo.GetRefreshToken(hashedRefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	if time.Now().After(storedToken.ExpiresAt) {
+		return nil, &response.Error{
+			Code:       response.ErrUnauthorized,
+			StatusCode: http.StatusUnauthorized,
+			Message:    "Refresh token expired",
+			Details: []response.Details{{
+				Field:   "refresh_token",
+				Message: "The refresh token has expired",
+			}},
+		}
+	}
+
+	user, userErr := s.Repo.SignInByID(storedToken.UserID)
+	if userErr != nil {
+		return nil, userErr
+	}
+	if !user.IsActive {
+		return nil, &response.Error{
+			Code:       response.ErrForbidden,
+			StatusCode: http.StatusForbidden,
+			Message:    "Account is inactive",
+			Details: []response.Details{{
+				Field:   "account",
+				Message: "The account is deactivated or locked",
+			}},
+		}
+	}
+
+	accessToken, tokenErr := middleware.GenerateJWT(user.Role, user.ID, s.logger)
+	if tokenErr != nil {
+		return nil, tokenErr
+	}
+
+	return &dto.AuthTokensResponse{
+		AccessToken:      accessToken,
+		RefreshToken:     credentials.RefreshToken,
+		TokenType:        "Bearer",
+		ExpiresIn:        900,
+		RefreshExpiresIn: int(time.Until(storedToken.ExpiresAt).Seconds()),
+	}, nil
 }
 
 func (s *authservice) SignUp(credentials dto.SignUpRequest) *response.Error {

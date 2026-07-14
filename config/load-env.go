@@ -42,30 +42,30 @@ func LoadEnv() *Config {
 
 	return &Config{
 		Database: DatabaseConfig{
-			Host:        getEnv("DB_HOST", ""),
-			Port:        getEnv("DB_PORT", "5432"),
-			Username:    getEnv("DB_USERNAME", ""),
-			Password:    getEnv("DB_PASSWORD", ""),
-			Name:        getEnv("DB_NAME", ""),
-			SSLMode:     getEnv("DB_SSL_MODE", ""),
-			AutoMigrate: getEnv("DB_AUTOMIGRATE", "false"),
+			Host:        GetEnv("DB_HOST", ""),
+			Port:        GetEnv("DB_PORT", "5432"),
+			Username:    GetEnv("DB_USERNAME", ""),
+			Password:    GetEnv("DB_PASSWORD", ""),
+			Name:        GetEnv("DB_NAME", ""),
+			SSLMode:     GetEnv("DB_SSL_MODE", ""),
+			AutoMigrate: GetEnv("DB_AUTOMIGRATE", "false"),
 		},
 		HTTP: HTTPConfig{
-			Port: getEnv("HTTP_PORT", "6369"),
+			Port: GetEnv("HTTP_PORT", "6369"),
 		},
 		Logger: LoggerConfig{
-			Type:  getEnv("LOGGER_TYPE", "development"),
-			Level: getEnv("LOGGER_LEVEL", "debug"),
+			Type:  GetEnv("LOGGER_TYPE", "development"),
+			Level: GetEnv("LOGGER_LEVEL", "debug"),
 		},
 		Redis: RedisConfig{
-			Host:     getEnv("REDIS_HOST", "localhost"),
-			Port:     getEnv("REDIS_PORT", "6379"),
-			Password: getEnv("REDIS_PASSWORD", ""),
+			Host:     GetEnv("REDIS_HOST", "localhost"),
+			Port:     GetEnv("REDIS_PORT", "6379"),
+			Password: GetEnv("REDIS_PASSWORD", ""),
 		},
 	}
 }
 
-func getEnv(key, defaultValue string) string {
+func GetEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
 	}

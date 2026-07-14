@@ -37,7 +37,9 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 				StatusCode: http.StatusBadRequest,
 				Message:    "Invalid request payload in Handler Layer",
 				Details: []response.Details{
-					{Field: "body", Message: err.Error()},
+					{
+						Field:   "body",
+						Message: err.Error()},
 				},
 			},
 		}
@@ -90,7 +92,11 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 
 	err := h.service.SignUp(payload)
 	if err != nil {
-		g.JSON(err.StatusCode, err)
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
 		return
 	}
 
@@ -116,7 +122,9 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 				StatusCode: http.StatusBadRequest,
 				Message:    "Failed converting json to struct in Handler Layer",
 				Details: []response.Details{
-					{Field: "body", Message: err.Error()},
+					{
+						Field:   "body",
+						Message: err.Error()},
 				},
 			},
 		}
@@ -148,9 +156,13 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 		return
 	}
 
-	_, _, err := h.service.SignIn(loginCredentials)
+	tokens, err := h.service.SignIn(loginCredentials)
 	if err != nil {
-		g.JSON(err.StatusCode, err)
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
 		return
 	}
 
@@ -158,7 +170,70 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 		Message:    "Successfully Logged in",
 		StatusCode: http.StatusOK,
 		Success:    true,
+		Data:       tokens,
 	}
 
+	g.JSON(successResponse.StatusCode, successResponse)
+}
+
+func (h *AuthHandler) RefreshToken(g *gin.Context) {
+
+	var payload dto.RefreshTokenRequest
+	
+	if err := g.ShouldBindJSON(&payload); err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrBadRequest,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid request payload in Handler Layer",
+				Details: []response.Details{{
+					Field:   "body",
+					Message: err.Error(),
+				}},
+			},
+		}
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(payload); err != nil {
+		var details []response.Details
+		for _, fieldErr := range err.(validator.ValidationErrors) {
+			details = append(details, response.Details{
+				Field:   fieldErr.Field(),
+				Message: fmt.Sprintf("failed on '%s' validation in Handler Layer", fieldErr.Tag()),
+			})
+		}
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Validation failed",
+				Details:    details,
+			},
+		}
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+
+	tokens, err := h.service.RefreshToken(payload)
+	if err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
+		return
+	}
+
+	successResponse := &response.SuccessResponse{
+		Message:    "Token refreshed successfully",
+		StatusCode: http.StatusOK,
+		Success:    true,
+		Data:       tokens,
+	}
 	g.JSON(successResponse.StatusCode, successResponse)
 }
