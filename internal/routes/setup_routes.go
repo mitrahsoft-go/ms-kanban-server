@@ -4,23 +4,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ms-kanban-server/config"
 	"github.com/ms-kanban-server/drivers/redis"
-	handlers "github.com/ms-kanban-server/internal/handlers/http"
 	"github.com/ms-kanban-server/internal/pkg/models"
-	"github.com/ms-kanban-server/internal/repository"
-	"github.com/ms-kanban-server/internal/services"
 )
 
-func SetupRoutes(deps models.Config, cfg *config.Config) {
-	// initialize repositories
-	repo := repository.InitRepository(deps.Database, deps.Logger)
-
-	// initialize services
-	service := services.InitService(repo, deps.Logger)
-
-	// initialize handlers
-	handlers.InitHandler(service, deps.Logger)
+func SetupRoutes(deps models.Config) {
 
 	// Health endpoint for liveness checks and readiness validation
 	deps.Router.GET("/health", func(c *gin.Context) {
@@ -70,4 +58,10 @@ func SetupRoutes(deps models.Config, cfg *config.Config) {
 			"dependencies": dependencies,
 		})
 	})
+
+	api := deps.Router.Group("/api/v1")
+	{
+		AuthRoutes(deps, api)
+	}
+
 }

@@ -23,6 +23,8 @@ func main() {
 	Logger, err := logger.InitLogger(config)
 	if err != nil {
 		log.Fatal("Failed to initialize logger :", err)
+	} else {
+		Logger.Info("Initialize the Logger")
 	}
 
 	// Initialize the database connection
@@ -30,13 +32,19 @@ func main() {
 	if err != nil {
 		Logger.Fatal("Failed to initialize database connection :",
 			zap.String("ERROR : ", err.Error()))
+	} else {
+		Logger.Info("Initialize the Database Connection",
+			zap.String("port :", "5433"))
 	}
 
 	// Initialize the RedisClient
 	redisClient, err := redis.InitRedisClient(config)
 	if err != nil {
-		Logger.Fatal("Failed to initialize Redis client:",
+		Logger.Error("Failed to initialize Redis client:",
 			zap.String("ERROR : ", err.Error()))
+	} else {
+		Logger.Info("Initialize the RedisClient",
+			zap.String("port :", "6379"))
 	}
 
 	//Initialize the Gin router and set up routes
@@ -49,7 +57,7 @@ func main() {
 		Logger:   Logger,
 	}
 	// Set up routes
-	routes.SetupRoutes(deps, config)
+	routes.SetupRoutes(deps)
 
 	// Start the server
 	Logger.Info("Server is running",
