@@ -124,7 +124,7 @@ func TestRefreshTokenReturnsNewAccessTokenForValidRefreshToken(t *testing.T) {
 
 	repo := &stubAuthRepository{
 		user:         models.User{ID: uuid.Must(uuid.NewV4()), Email: "user@example.com", Role: "developer", IsActive: true},
-		refreshToken: models.RefreshToken{UserID: 1, TokenHash: refreshHash, ExpiresAt: time.Now().Add(1 * time.Hour)},
+		refreshToken: models.RefreshToken{UserID: 1, TokenHash: refreshHash, ExpiresAt: time.Now().Add(7 * 24 * time.Hour)},
 	}
 	service := InitAuthService(repo, zap.NewNop())
 

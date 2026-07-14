@@ -17,10 +17,6 @@ func GenerateJWT(role string, id uuid.UUID, logger *zap.Logger) (string, *respon
 	return generateJWT(role, id, 15*time.Minute, logger)
 }
 
-func GenerateRefreshJWT(role string, id uuid.UUID, logger *zap.Logger) (string, *response.Error) {
-	return generateJWT(role, id, 1*time.Hour, logger)
-}
-
 func generateJWT(role string, id uuid.UUID, ttl time.Duration, logger *zap.Logger) (string, *response.Error) {
 	var jwtKey = config.GetEnv("JWT_SECRET_KEY", "")
 
