@@ -31,7 +31,7 @@ func (d *authdatabase) SignIn(email string) (models.User, int, *response.Error) 
 
 	var row models.User
 
-	err := d.DB.Preload("Role").Where("email = ?", email).First(&row).Error
+	err := d.DB.Where("email = ?", email).First(&row).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
