@@ -97,9 +97,8 @@ func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResp
 	}
 
 	expiresAt := time.Now().Add(7 * 24 * time.Hour)
-	userID := uint(1)
 	storeErr := s.Repo.StoreRefreshToken(models.RefreshToken{
-		UserID:    userID,
+		UserID:    result.ID,
 		TokenHash: hashedRefreshToken,
 		ExpiresAt: expiresAt,
 	})
@@ -112,7 +111,7 @@ func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResp
 		RefreshToken:     refreshTokenValue,
 		TokenType:        "Bearer",
 		ExpiresIn:        900,
-		RefreshExpiresIn: 3600,
+		RefreshExpiresIn: 604800,
 	}, nil
 }
 

@@ -44,8 +44,8 @@ type User struct {
 }
 
 type RefreshToken struct {
-	ID        uint           `json:"id" gorm:"primaryKey;autoIncrement"`
-	UserID    uint           `json:"user_id" gorm:"index:idx_refresh_tokens_user_id;not null"`
+	ID        uuid.UUID      `json:"id" gorm:"primaryKey"`
+	UserID    uuid.UUID      `json:"user_id" gorm:"index:idx_refresh_tokens_user_id;not null"`
 	TokenHash string         `json:"token_hash" gorm:"size:255;not null;unique"`
 	UserAgent *string        `json:"user_agent,omitempty" gorm:"type:text"`
 	IPAddress *string        `json:"ip_address,omitempty" gorm:"size:45"`
@@ -67,8 +67,11 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 func (r *RefreshToken) BeforeCreate(tx *gorm.DB) (err error) {
-	if r.CreatedAt.IsZero() {
-		r.CreatedAt = time.Now()
+	if r.ID == uuid.Nil {
+		r.ID, err = uuid.NewV7()
+		if err != nil {
+			return err
+		}
 	}
-	return nil
+	return
 }

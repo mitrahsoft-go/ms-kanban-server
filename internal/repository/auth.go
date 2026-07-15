@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gofrs/uuid"
 	"github.com/ms-kanban-server/internal/pkg/models"
 	"github.com/ms-kanban-server/internal/pkg/response"
 	"go.uber.org/zap"
@@ -12,7 +13,7 @@ import (
 
 type Repository interface {
 	SignIn(email string) (models.User, *response.Error)
-	SignInByID(id uint) (models.User, *response.Error)
+	SignInByID(id uuid.UUID) (models.User, *response.Error)
 	SignUp(row models.User) *response.Error
 	StoreRefreshToken(token models.RefreshToken) *response.Error
 	GetRefreshToken(userID string) (models.RefreshToken, *response.Error)
@@ -72,10 +73,10 @@ func (d *authdatabase) SignIn(email string) (models.User, *response.Error) {
 	return row, nil
 }
 
-func (d *authdatabase) SignInByID(id uint) (models.User, *response.Error) {
+func (d *authdatabase) SignInByID(id uuid.UUID) (models.User, *response.Error) {
 
 	var row models.User
-	
+
 	if err := d.DB.Where("id = ?", id).First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return models.User{}, &response.Error{
@@ -145,7 +146,7 @@ func (d *authdatabase) GetRefreshToken(userID string) (models.RefreshToken, *res
 
 	var token models.RefreshToken
 
-	if err := d.DB.Where("userID = ?", userID).First(&token).Error; err != nil {
+	if err := d.DB.Where("user_id = ?", userID).First(&token).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return models.RefreshToken{}, &response.Error{
 				Code:       response.ErrUnauthorized,

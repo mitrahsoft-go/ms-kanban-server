@@ -25,7 +25,7 @@ func (s *stubAuthRepository) SignIn(email string) (models.User, *response.Error)
 	return s.user, nil
 }
 
-func (s *stubAuthRepository) SignInByID(id uint) (models.User, *response.Error) {
+func (s *stubAuthRepository) SignInByID(id uuid.UUID) (models.User, *response.Error) {
 	if s.err != nil {
 		return models.User{}, s.err
 	}
@@ -53,7 +53,14 @@ func TestSignInReturnsUnauthorizedForInvalidPassword(t *testing.T) {
 		t.Fatalf("failed to hash password: %v", err)
 	}
 
-	repo := &stubAuthRepository{user: models.User{ID: uuid.Must(uuid.NewV4()), Email: "user@example.com", PasswordHash: hash, Role: "developer", IsActive: true}}
+	repo := &stubAuthRepository{
+		user: models.User{ID: uuid.Must(uuid.NewV4()), 
+			Email: "user@example.com", 
+			PasswordHash: hash, 
+			Role: "developer", 
+			IsActive: true,
+		},
+	}
 	service := InitAuthService(repo, zap.NewNop())
 
 	result, authErr := service.SignIn(dto.SignInRequest{Email: "user@example.com", Password: "wrong-password"})
@@ -95,7 +102,7 @@ func TestSignInReturnsAuthTokensForValidCredentials(t *testing.T) {
 		t.Fatalf("failed to hash password: %v", err)
 	}
 
-	repo := &stubAuthRepository{user: models.User{ID: uuid.Must(uuid.NewV4()), Email: "user@example.com", PasswordHash: hash, Role: "developer", IsActive: true}}
+	repo := &stubAuthRepository{user: models.User{ID: uuid.Must(uuid.NewV7()), Email: "user@example.com", PasswordHash: hash, Role: "developer", IsActive: true}}
 	service := InitAuthService(repo, zap.NewNop())
 
 	result, authErr := service.SignIn(dto.SignInRequest{Email: "user@example.com", Password: "correct-password"})
@@ -123,8 +130,8 @@ func TestRefreshTokenReturnsNewAccessTokenForValidRefreshToken(t *testing.T) {
 	}
 
 	repo := &stubAuthRepository{
-		user:         models.User{ID: uuid.Must(uuid.NewV4()), Email: "user@example.com", Role: "developer", IsActive: true},
-		refreshToken: models.RefreshToken{UserID: 1, TokenHash: refreshHash, ExpiresAt: time.Now().Add(7 * 24 * time.Hour)},
+		user:         models.User{ID: uuid.Must(uuid.NewV7()), Email: "user@example.com", Role: "developer", IsActive: true},
+		refreshToken: models.RefreshToken{UserID: uuid.Must(uuid.NewV7()), TokenHash: refreshHash, ExpiresAt: time.Now().Add(7 * 24 * time.Hour)},
 	}
 	service := InitAuthService(repo, zap.NewNop())
 
