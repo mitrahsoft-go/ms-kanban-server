@@ -3,6 +3,7 @@ package utils
 import (
 	"net/http"
 	"regexp"
+	"strconv"
 
 	"github.com/gofrs/uuid"
 	"github.com/ms-kanban-server/internal/pkg/response"
@@ -30,7 +31,7 @@ func HashPassword(password string) (string, *response.Error) {
 	if err != nil {
 		errorResponse := response.Error{
 			Code:       response.ErrInternalServerError,
-			Message:    "InternalServerError in Utils",
+			Message:    "InternalServerError",
 			StatusCode: http.StatusInternalServerError,
 			Details: []response.Details{
 				{
@@ -54,7 +55,7 @@ func StringToUUID(idStr string) (uuid.UUID, *response.Error) {
 		errorResponse := response.Error{
 			Code:       response.ErrBadRequest,
 			StatusCode: http.StatusBadRequest,
-			Message:    "Invalid Format in Utils",
+			Message:    "Invalid Format",
 			Details: []response.Details{
 				{
 					Field:   "ID",
@@ -65,4 +66,22 @@ func StringToUUID(idStr string) (uuid.UUID, *response.Error) {
 		return uuid.Nil, &errorResponse
 	}
 	return id, nil
+}
+
+func StringToInt(str string) (int, *response.Error) {
+
+	num, err := strconv.Atoi(str)
+	if err != nil {
+		errorResponse := response.Error{
+			Code:       response.ErrInternalServerError,
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to convert the string into integer",
+			Details: []response.Details{
+				{
+					Message: err.Error()},
+			},
+		}
+		return 0, &errorResponse
+	}
+	return num, nil
 }

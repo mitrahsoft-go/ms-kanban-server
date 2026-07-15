@@ -17,3 +17,8 @@ export LOGGER_LEVEL=debug #Info, Debug, Error, Warn, Fatal, Panic
 export REDIS_HOST=localhost
 export REDIS_PORT=6379
 export REDIS_PASSWORD= # Your Password 
+
+# JWT Key
+export JWT_SECRET_KEY = # Your Key 
+export JWT_EXPIRY= # Set the duration (in Seconds)
+export REFRESH_TOKEN_EXPIRY= # Set the duration (in Seconds)

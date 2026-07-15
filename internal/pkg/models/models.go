@@ -43,9 +43,32 @@ type User struct {
 	DeletedAt      gorm.DeletedAt `json:"-" gorm:"index:idx_users_deleted_at"`
 }
 
+type RefreshToken struct {
+	ID        uuid.UUID      `json:"id" gorm:"primaryKey"`
+	UserID    uuid.UUID      `json:"user_id" gorm:"index:idx_refresh_tokens_user_id;not null;unique"`
+	TokenHash string         `json:"token_hash" gorm:"size:255;not null;unique"`
+	UserAgent *string        `json:"user_agent,omitempty" gorm:"type:text"`
+	IPAddress *string        `json:"ip_address,omitempty" gorm:"size:45"`
+	ExpiresAt time.Time      `json:"expires_at" gorm:"not null"`
+	RevokedAt *time.Time     `json:"revoked_at,omitempty"`
+	CreatedAt time.Time      `json:"created_at" gorm:"not null"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index:idx_refresh_tokens_deleted_at"`
+}
+
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	if u.ID == uuid.Nil {
 		u.ID, err = uuid.NewV7()
+		if err != nil {
+			return err
+		}
+	}
+	return
+}
+
+func (r *RefreshToken) BeforeCreate(tx *gorm.DB) (err error) {
+	if r.ID == uuid.Nil {
+		r.ID, err = uuid.NewV7()
 		if err != nil {
 			return err
 		}

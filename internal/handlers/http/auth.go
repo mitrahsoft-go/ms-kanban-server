@@ -35,12 +35,18 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 			Error: response.Error{
 				Code:       response.ErrBadRequest,
 				StatusCode: http.StatusBadRequest,
-				Message:    "Invalid request payload in Handler Layer",
+				Message:    "Invalid request payload",
 				Details: []response.Details{
-					{Field: "body", Message: err.Error()},
+					{
+						Field:   "body",
+						Message: err.Error()},
 				},
 			},
 		}
+
+		h.logger.Error("Invalid request payload in Handler Layer",
+			zap.Error(err))
+
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}
@@ -60,10 +66,13 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 			Error: response.Error{
 				Code:       response.ErrValidation,
 				StatusCode: http.StatusBadRequest,
-				Message:    "Validation failed in Handler Layer",
+				Message:    "Validation failed",
 				Details:    details,
 			},
 		}
+
+		h.logger.Error("Validation failed in Handler Layer",
+			zap.Error(err))
 
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
@@ -75,7 +84,7 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 			Error: response.Error{
 				Code:       response.ErrValidation,
 				StatusCode: http.StatusBadRequest,
-				Message:    "Validation failed in Handler Layer",
+				Message:    "Validation failed",
 				Details: []response.Details{
 					{
 						Field:   "password",
@@ -84,13 +93,19 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 				},
 			},
 		}
+
+		h.logger.Error("Validation failed for password in Handler Layer")
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}
 
 	err := h.service.SignUp(payload)
 	if err != nil {
-		g.JSON(err.StatusCode, err)
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
 		return
 	}
 
@@ -114,12 +129,17 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 			Error: response.Error{
 				Code:       response.ErrBadRequest,
 				StatusCode: http.StatusBadRequest,
-				Message:    "Failed converting json to struct in Handler Layer",
+				Message:    "Failed converting json to struct",
 				Details: []response.Details{
-					{Field: "body", Message: err.Error()},
+					{
+						Field:   "body",
+						Message: err.Error()},
 				},
 			},
 		}
+
+		h.logger.Error("Invalid request payload in Handler Layer",
+			zap.Error(err))
 
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
@@ -131,7 +151,7 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 		for _, fieldErr := range err.(validator.ValidationErrors) {
 			details = append(details, response.Details{
 				Field:   fieldErr.Field(),
-				Message: fmt.Sprintf("failed on '%s' validation in Handler Layer", fieldErr.Tag()),
+				Message: fmt.Sprintf("failed on '%s' validation", fieldErr.Tag()),
 			})
 		}
 
@@ -144,13 +164,21 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 				Details:    details,
 			},
 		}
+
+		h.logger.Error("Validation failed in Handler Layer",
+			zap.Error(err))
+
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}
 
-	_, _, err := h.service.SignIn(loginCredentials)
+	tokens, err := h.service.SignIn(loginCredentials)
 	if err != nil {
-		g.JSON(err.StatusCode, err)
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
 		return
 	}
 
@@ -158,7 +186,102 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 		Message:    "Successfully Logged in",
 		StatusCode: http.StatusOK,
 		Success:    true,
+		Data:       tokens,
 	}
 
+	g.JSON(successResponse.StatusCode, successResponse)
+}
+
+func (h *AuthHandler) RefreshToken(g *gin.Context) {
+
+	var payload dto.RefreshTokenRequest
+
+	if err := g.ShouldBindJSON(&payload); err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrBadRequest,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid request payload in Handler Layer",
+				Details: []response.Details{{
+					Field:   "body",
+					Message: err.Error(),
+				}},
+			},
+		}
+
+		h.logger.Error("Invalid request payload in Handler Layer",
+			zap.Error(err))
+
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(payload); err != nil {
+		var details []response.Details
+		for _, fieldErr := range err.(validator.ValidationErrors) {
+			details = append(details, response.Details{
+				Field:   fieldErr.Field(),
+				Message: fmt.Sprintf("failed on '%s' validation in Handler Layer", fieldErr.Tag()),
+			})
+		}
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Validation failed",
+				Details:    details,
+			},
+		}
+
+		h.logger.Error("Validation failed in Handler Layer",
+			zap.Error(err))
+
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+
+	userID, exist := g.Get("user_id")
+	if !exist {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "invalid User ID",
+				Details: []response.Details{
+					{
+						Field:   "User ID",
+						Message: "User Id missing",
+					},
+				},
+			},
+		}
+
+		h.logger.Error("User Id missing  in Handler Layer")
+
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+	payload.UserID = userID.(string)
+
+	tokens, err := h.service.RefreshToken(payload)
+	if err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
+		return
+	}
+
+	successResponse := &response.SuccessResponse{
+		Message:    "Token refreshed successfully",
+		StatusCode: http.StatusOK,
+		Success:    true,
+		Data:       tokens,
+	}
 	g.JSON(successResponse.StatusCode, successResponse)
 }

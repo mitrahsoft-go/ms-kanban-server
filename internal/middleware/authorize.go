@@ -1,0 +1,81 @@
+package middleware
+
+import (
+	"fmt"
+	"net/http"
+	"slices"
+
+	"github.com/gin-gonic/gin"
+	"github.com/ms-kanban-server/internal/pkg/response"
+	"go.uber.org/zap"
+)
+
+func (m Middleware) Authorize(rolesAllowed ...string) gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+
+		roleVal, exists := c.Get("role")
+		if !exists {
+			errorResponse := response.Error{
+				Code:       response.ErrForbidden,
+				StatusCode: http.StatusForbidden,
+				Message:    "Need Authentication",
+				Details: []response.Details{
+					{
+						Field:   "role",
+						Message: "Forbidden",
+					},
+				},
+			}
+
+			m.Logger.Error("Forbidden,Missing Authentication in Middleware Layer",
+				zap.String("ERROR : ", fmt.Sprintf("%v", errorResponse)))
+
+			c.AbortWithStatusJSON(http.StatusForbidden, errorResponse)
+			return
+		}
+
+		role, ok := roleVal.(string)
+		if !ok || role == "" {
+			errorResponse := response.Error{
+				Code:       response.ErrForbidden,
+				StatusCode: http.StatusForbidden,
+				Message:    "Access Denied",
+				Details: []response.Details{
+					{
+						Field:   "role",
+						Message: "Forbidden",
+					},
+				},
+			}
+
+			m.Logger.Error("Forbidden,Missing Authentication in Middleware Layer",
+				zap.String("ERROR : ", fmt.Sprintf("%v", errorResponse)))
+
+			c.AbortWithStatusJSON(http.StatusForbidden, errorResponse)
+			return
+		}
+
+		if slices.Contains(rolesAllowed, role) {
+			c.Next()
+			return
+		}
+
+		errorResponse := response.Error{
+			Code:       response.ErrForbidden,
+			StatusCode: http.StatusForbidden,
+			Message:    "Access Denied",
+			Details: []response.Details{
+				{
+					Field:   "role",
+					Message: "Forbidden",
+				},
+			},
+		}
+
+		m.Logger.Error("Forbidden,Missing Authentication in Middleware Layer",
+			zap.String("ERROR : ", fmt.Sprintf("%v", errorResponse)))
+
+		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse)
+	}
+}
