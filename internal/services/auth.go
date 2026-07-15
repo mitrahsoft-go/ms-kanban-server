@@ -3,11 +3,13 @@ package services
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofrs/uuid"
+	"github.com/ms-kanban-server/config"
 	"github.com/ms-kanban-server/internal/handlers/dto"
 	"github.com/ms-kanban-server/internal/middleware"
 	"github.com/ms-kanban-server/internal/pkg/models"
@@ -96,7 +98,22 @@ func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResp
 		return nil, hashErr
 	}
 
-	expiresAt := time.Now().Add(7 * 24 * time.Hour)
+	expiresIn, err := utils.StringToInt(config.GetEnv("JWT_EXPIRY", "900"))
+	if err != nil {
+
+		s.logger.Error("Failed to set the expire time in Middleware Layer",
+			zap.String("ERROR : ", fmt.Sprintf("%v", err)))
+		return nil, err
+	}
+
+	refreshExpiresIn, err := utils.StringToInt(config.GetEnv("REFRESH_TOKEN_EXPIRY", "604800"))
+	if err != nil {
+
+		s.logger.Error("Failed to set the expire time in Middleware Layer",
+			zap.String("ERROR : ", fmt.Sprintf("%v", err)))
+		return nil, err
+	}
+	expiresAt := time.Now().Add(time.Duration(refreshExpiresIn))
 	storeErr := s.Repo.StoreRefreshToken(models.RefreshToken{
 		UserID:    result.ID,
 		TokenHash: hashedRefreshToken,
@@ -110,8 +127,8 @@ func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResp
 		AccessToken:      accessToken,
 		RefreshToken:     refreshTokenValue,
 		TokenType:        "Bearer",
-		ExpiresIn:        900,
-		RefreshExpiresIn: 604800,
+		ExpiresIn:        expiresIn,
+		RefreshExpiresIn: refreshExpiresIn,
 	}, nil
 }
 

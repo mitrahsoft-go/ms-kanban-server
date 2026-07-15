@@ -10,11 +10,21 @@ import (
 	"github.com/ms-kanban-server/config"
 	"github.com/ms-kanban-server/internal/handlers/dto"
 	"github.com/ms-kanban-server/internal/pkg/response"
+	"github.com/ms-kanban-server/internal/pkg/utils"
 	"go.uber.org/zap"
 )
 
 func GenerateJWT(role string, id uuid.UUID, logger *zap.Logger) (string, *response.Error) {
-	return generateJWT(role, id, 15*time.Minute, logger)
+
+	expiresIn, err := utils.StringToInt(config.GetEnv("JWT_EXPIRY", "900"))
+	if err != nil {
+
+		logger.Error("Failed to set the expire time in Middleware Layer",
+			zap.String("ERROR : ", fmt.Sprintf("%v", err)))
+		return "", err
+	}
+
+	return generateJWT(role, id, time.Duration(expiresIn)*time.Second, logger)
 }
 
 func generateJWT(role string, id uuid.UUID, ttl time.Duration, logger *zap.Logger) (string, *response.Error) {
