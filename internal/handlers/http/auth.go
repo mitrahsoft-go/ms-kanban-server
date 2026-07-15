@@ -285,3 +285,47 @@ func (h *AuthHandler) RefreshToken(g *gin.Context) {
 	}
 	g.JSON(successResponse.StatusCode, successResponse)
 }
+
+func (h *AuthHandler) Logout(g *gin.Context) {
+
+	userID, exist := g.Get("user_id")
+	if !exist {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "invalid User ID",
+				Details: []response.Details{
+					{
+						Field:   "User ID",
+						Message: "User Id missing",
+					},
+				},
+			},
+		}
+
+		h.logger.Error("User Id missing  in Handler Layer")
+
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+	id := userID.(string)
+
+	err := h.service.Logout(id)
+	if err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
+		return
+	}
+
+	successResponse := &response.SuccessResponse{
+		Message:    "Logedout successfully",
+		StatusCode: http.StatusOK,
+		Success:    true,
+	}
+	g.JSON(successResponse.StatusCode, successResponse)
+}

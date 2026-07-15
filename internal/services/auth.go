@@ -23,6 +23,7 @@ type Service interface {
 	SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResponse, *response.Error)
 	RefreshToken(credentials dto.RefreshTokenRequest) (*dto.AuthTokensResponse, *response.Error)
 	SignUp(credentials dto.SignUpRequest) *response.Error
+	Logout(UserID string) *response.Error
 }
 
 func InitAuthService(repo repository.Repository, logger *zap.Logger) Service {
@@ -299,4 +300,21 @@ func (s *authservice) SignUp(credentials dto.SignUpRequest) *response.Error {
 
 	return s.Repo.SignUp(result)
 
+}
+
+func (s *authservice) Logout(UserID string) *response.Error {
+
+	oldToken, err := s.Repo.GetRefreshToken(UserID)
+	if err != nil {
+		return err
+	}
+
+	expiresAt := time.Now()
+
+	s.Repo.StoreRefreshToken(models.RefreshToken{
+		UserID:    oldToken.ID,
+		ExpiresAt: expiresAt,
+	})
+
+	return nil
 }
