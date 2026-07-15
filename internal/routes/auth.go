@@ -20,12 +20,12 @@ func AuthRoutes(deps models.Config, api *gin.RouterGroup) {
 	// initialize handlers
 	handler := handlers.InitAuthHandler(service, deps.Logger)
 
-	middleware.InitMiddleware(deps.Logger)
+	middleware := middleware.InitMiddleware(deps.Logger)
 
 	auth := api.Group("/auth")
 	{
 		auth.POST("/signin", handler.SignIn)
-		auth.POST("/refresh", handler.RefreshToken)
+		auth.POST("/refresh", middleware.ValidateJWT(), handler.RefreshToken)
 		auth.POST("/signup", handler.SignUp)
 	}
 }

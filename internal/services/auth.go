@@ -130,7 +130,7 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 		return nil, err
 	}
 
-	if !utils.IsValidPassword(oldToken.TokenHash, credentials.RefreshToken) {
+	if utils.IsValidPassword(oldToken.TokenHash, credentials.RefreshToken) {
 		return nil, &response.Error{
 			Code:       response.ErrUnauthorized,
 			StatusCode: http.StatusUnauthorized,

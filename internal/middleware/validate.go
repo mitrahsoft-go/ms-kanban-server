@@ -72,7 +72,7 @@ func (m Middleware) ValidateJWT() gin.HandlerFunc {
 
 		tokenString := parts[1]
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
-			return jwtSecret, nil
+			return []byte(jwtSecret), nil
 		})
 
 		if err != nil || !token.Valid {

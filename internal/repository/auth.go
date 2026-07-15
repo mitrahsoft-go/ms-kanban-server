@@ -125,18 +125,60 @@ func (d *authdatabase) SignUp(row models.User) *response.Error {
 
 func (d *authdatabase) StoreRefreshToken(token models.RefreshToken) *response.Error {
 
-	if err := d.DB.Create(&token).Error; err != nil {
-		errorResponse := response.Error{
+	var existing models.RefreshToken
+
+	err := d.DB.Where("user_id = ?", token.UserID).First(&existing).Error
+	if err == nil {
+		// Update existing row
+		existing.TokenHash = token.TokenHash
+		existing.UserAgent = token.UserAgent
+		existing.IPAddress = token.IPAddress
+		existing.ExpiresAt = token.ExpiresAt
+		existing.RevokedAt = token.RevokedAt
+
+		if err := d.DB.Save(&existing).Error; err != nil {
+			errorResponse := response.Error{
+				Code:       response.ErrInternalServerError,
+				StatusCode: http.StatusInternalServerError,
+				Message:    "Failed to store refresh token",
+				Details: []response.Details{{
+					Message: "Failed inserting refresh token : " + err.Error(),
+				}},
+			}
+
+			d.logger.Error("Database error occurred while storing refresh token in Repository layer",
+				zap.Error(err))
+			return &errorResponse
+		}
+
+	} else if errors.Is(err, gorm.ErrRecordNotFound) {
+		// Create new row
+		if err := d.DB.Create(&token).Error; err != nil {
+			errorResponse := response.Error{
+				Code:       response.ErrInternalServerError,
+				StatusCode: http.StatusInternalServerError,
+				Message:    "Failed to Create refresh token",
+				Details: []response.Details{{
+					Message: "Failed inserting refresh token : " + err.Error(),
+				}},
+			}
+
+			d.logger.Error("Database error occurred while storing refresh token in Repository layer",
+				zap.Error(err))
+			return &errorResponse
+		}
+
+	} else {
+		d.logger.Error("Failed querying refresh token in Repository layer",
+			zap.Error(err))
+		return &response.Error{
 			Code:       response.ErrInternalServerError,
 			StatusCode: http.StatusInternalServerError,
-			Message:    "Failed to store refresh token",
+			Message:    "Failed querying refresh token",
 			Details: []response.Details{{
-				Message: "Failed inserting refresh token : " + err.Error(),
+				Message: "Failed querying refresh token : " + err.Error(),
 			}},
 		}
-		d.logger.Error("Database error occurred while storing refresh token in Repository layer",
-			zap.Error(err))
-		return &errorResponse
 	}
 
 	return nil
