@@ -9,6 +9,7 @@ import (
 	"github.com/ms-kanban-server/internal/pkg/response"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Repository interface {
@@ -125,60 +126,36 @@ func (d *authdatabase) SignUp(row models.User) *response.Error {
 
 func (d *authdatabase) StoreRefreshToken(token models.RefreshToken) *response.Error {
 
-	var existing models.RefreshToken
+	err := d.DB.Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "user_id"}, // Conflict target
+		},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"token_hash",
+			"user_agent",
+			"ip_address",
+			"expires_at",
+			"revoked_at",
+			"updated_at", // if your model has UpdatedAt
+		}),
+	}).Create(&token).Error
 
-	err := d.DB.Where("user_id = ?", token.UserID).First(&existing).Error
-	if err == nil {
-		// Update existing row
-		existing.TokenHash = token.TokenHash
-		existing.UserAgent = token.UserAgent
-		existing.IPAddress = token.IPAddress
-		existing.ExpiresAt = token.ExpiresAt
-		existing.RevokedAt = token.RevokedAt
-
-		if err := d.DB.Save(&existing).Error; err != nil {
-			errorResponse := response.Error{
-				Code:       response.ErrInternalServerError,
-				StatusCode: http.StatusInternalServerError,
-				Message:    "Failed to store refresh token",
-				Details: []response.Details{{
-					Message: "Failed inserting refresh token : " + err.Error(),
-				}},
-			}
-
-			d.logger.Error("Database error occurred while storing refresh token in Repository layer",
-				zap.Error(err))
-			return &errorResponse
-		}
-
-	} else if errors.Is(err, gorm.ErrRecordNotFound) {
-		// Create new row
-		if err := d.DB.Create(&token).Error; err != nil {
-			errorResponse := response.Error{
-				Code:       response.ErrInternalServerError,
-				StatusCode: http.StatusInternalServerError,
-				Message:    "Failed to Create refresh token",
-				Details: []response.Details{{
-					Message: "Failed inserting refresh token : " + err.Error(),
-				}},
-			}
-
-			d.logger.Error("Database error occurred while storing refresh token in Repository layer",
-				zap.Error(err))
-			return &errorResponse
-		}
-
-	} else {
-		d.logger.Error("Failed querying refresh token in Repository layer",
-			zap.Error(err))
-		return &response.Error{
+	if err != nil {
+		errorResponse := response.Error{
 			Code:       response.ErrInternalServerError,
 			StatusCode: http.StatusInternalServerError,
-			Message:    "Failed querying refresh token",
+			Message:    "Failed to store refresh token",
 			Details: []response.Details{{
-				Message: "Failed querying refresh token : " + err.Error(),
+				Message: "Failed storing refresh token: " + err.Error(),
 			}},
 		}
+
+		d.logger.Error(
+			"Database error occurred while storing refresh token in Repository layer",
+			zap.Error(err),
+		)
+
+		return &errorResponse
 	}
 
 	return nil

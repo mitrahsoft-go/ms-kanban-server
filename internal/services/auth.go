@@ -113,7 +113,7 @@ func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResp
 			zap.String("ERROR : ", fmt.Sprintf("%v", err)))
 		return nil, err
 	}
-	expiresAt := time.Now().Add(time.Duration(refreshExpiresIn))
+	expiresAt := time.Now().Add(time.Duration(refreshExpiresIn) * time.Second)
 	storeErr := s.Repo.StoreRefreshToken(models.RefreshToken{
 		UserID:    result.ID,
 		TokenHash: hashedRefreshToken,
@@ -192,11 +192,19 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 		return nil, tokenErr
 	}
 
+	expiresIn, err := utils.StringToInt(config.GetEnv("JWT_EXPIRY", "900"))
+	if err != nil {
+
+		s.logger.Error("Failed to set the expire time in Middleware Layer",
+			zap.String("ERROR : ", fmt.Sprintf("%v", err)))
+		return nil, err
+	}
+
 	return &dto.AuthTokensResponse{
 		AccessToken:      accessToken,
 		RefreshToken:     credentials.RefreshToken,
 		TokenType:        "Bearer",
-		ExpiresIn:        900,
+		ExpiresIn:        expiresIn,
 		RefreshExpiresIn: int(time.Until(oldToken.ExpiresAt).Seconds()),
 	}, nil
 }

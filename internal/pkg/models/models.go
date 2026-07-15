@@ -45,7 +45,7 @@ type User struct {
 
 type RefreshToken struct {
 	ID        uuid.UUID      `json:"id" gorm:"primaryKey"`
-	UserID    uuid.UUID      `json:"user_id" gorm:"index:idx_refresh_tokens_user_id;not null"`
+	UserID    uuid.UUID      `json:"user_id" gorm:"index:idx_refresh_tokens_user_id;not null;unique"`
 	TokenHash string         `json:"token_hash" gorm:"size:255;not null;unique"`
 	UserAgent *string        `json:"user_agent,omitempty" gorm:"type:text"`
 	IPAddress *string        `json:"ip_address,omitempty" gorm:"size:45"`
