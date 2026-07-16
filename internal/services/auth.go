@@ -25,6 +25,7 @@ type Service interface {
 	SignUp(credentials dto.SignUpRequest) *response.Error
 	Logout(UserID string) *response.Error
 	ChangePassword(payload dto.ChangePasswordRequest) *response.Error
+	UpdateUser(payload dto.UpdateUserRequest, userID uuid.UUID) *response.Error
 }
 
 func InitAuthService(repo repository.Repository, logger *zap.Logger) Service {
@@ -360,6 +361,49 @@ func (s *authservice) ChangePassword(payload dto.ChangePasswordRequest) *respons
 		return errorResponse
 	}
 
-	return s.Repo.ChangePassword(passwordhash,payload.UserID)
+	return s.Repo.ChangePassword(passwordhash, payload.UserID)
+
+}
+
+func (s *authservice) UpdateUser(payload dto.UpdateUserRequest, userID uuid.UUID) *response.Error {
+
+	if len(payload.FullName) >30 {
+		s.logger.Error("Validated failure in Full Name  in service layer")
+		return &response.Error{
+			Code:       response.ErrBadRequest,
+			StatusCode: http.StatusBadRequest,
+			Message:    "BadRequest",
+			Details: []response.Details{
+				{
+					Field:   "Full Name",
+					Message: "Invalid Full Name format",
+				},
+			},
+		}
+	}
+
+	if len(payload.UserName) > 30 {
+		s.logger.Error("Validated failure in Full Name  in service layer")
+		return &response.Error{
+			Code:       response.ErrBadRequest,
+			StatusCode: http.StatusBadRequest,
+			Message:    "BadRequest",
+			Details: []response.Details{
+				{
+					Field:   "UserName",
+					Message: "Invalid UserName format",
+				},
+			},
+		}
+	}
+
+	req := models.User{
+		FullName:  payload.FullName,
+		UserName:  payload.UserName,
+		AvatarURL: payload.AvatarURL,
+		Timezone:  payload.Timezone,
+	}
+
+	return s.Repo.UpdateUser(userID, req)
 
 }

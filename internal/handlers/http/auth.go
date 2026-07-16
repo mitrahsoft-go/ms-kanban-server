@@ -403,3 +403,76 @@ func (h *AuthHandler) ChangePassword(g *gin.Context) {
 	g.JSON(successResponse.StatusCode, successResponse)
 
 }
+
+func (h *AuthHandler) Updateuser(g *gin.Context) {
+
+	var payload dto.UpdateUserRequest
+
+	if err := g.ShouldBindJSON(&payload); err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrBadRequest,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid request payload in Handler Layer",
+				Details: []response.Details{{
+					Field:   "body",
+					Message: err.Error(),
+				}},
+			},
+		}
+
+		h.logger.Error("Invalid request payload in Handler Layer",
+			zap.Error(err))
+
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+
+	userID, exist := g.Get("user_id")
+	if !exist {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "invalid User ID",
+				Details: []response.Details{
+					{
+						Field:   "User ID",
+						Message: "User Id missing",
+					},
+				},
+			},
+		}
+
+		h.logger.Error("User Id missing  in Handler Layer")
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+	userIDStr := userID.(string)
+
+	id, errorResponse := utils.StringToUUID(userIDStr)
+	if errorResponse != nil {
+		h.logger.Error("Failed to convert the string into UUID in Handler layer")
+		return
+	}
+
+	err := h.service.UpdateUser(payload, id)
+	if err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
+		return
+	}
+
+	successResponse := &response.SuccessResponse{
+		Message:    "Updated profile successfully",
+		StatusCode: http.StatusOK,
+		Success:    true,
+	}
+	g.JSON(successResponse.StatusCode, successResponse)
+
+}

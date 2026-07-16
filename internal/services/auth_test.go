@@ -53,6 +53,12 @@ func (s *stubAuthRepository) ChangePassword(tokenHash string, userID uuid.UUID) 
 	}
 	return nil
 }
+func (s *stubAuthRepository) UpdateUser(userID uuid.UUID, req models.User) *response.Error {
+	if s.err != nil {
+		return s.err
+	}
+	return nil
+}
 
 func TestSignInReturnsUnauthorizedForInvalidPassword(t *testing.T) {
 	hash, err := utils.HashPassword("correct-password")
