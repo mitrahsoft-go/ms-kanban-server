@@ -60,7 +60,7 @@ type RefreshToken struct {
 type PasswordResetOTP struct {
 	ID        uuid.UUID      `json:"id" gorm:"primaryKey"`
 	UserID    uuid.UUID      `json:"user_id" gorm:"index:idx_password_reset_otps_user_id;not null"`
-	OTPHash   string         `json:"-" gorm:"column:otp_hash;size:255;not null"`
+	OTPHash   string         `json:"otp_hash" gorm:"column:otp_hash;size:255;not null"`
 	ExpiresAt time.Time      `json:"expires_at" gorm:"not null"`
 	UsedAt    *time.Time     `json:"used_at,omitempty" gorm:"index"`
 	CreatedAt time.Time      `json:"created_at" gorm:"not null"`

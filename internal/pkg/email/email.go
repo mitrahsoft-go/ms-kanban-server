@@ -14,7 +14,7 @@ import (
 )
 
 func SendPasswordResetOTP(toEmail, otp string) error {
-	renderedHTML, err := utils.RenderTemplateFile("templates/email/password_reset.html", map[string]any{"OTP": otp, "ExpiryMinutes": 15})
+	renderedHTML, err := utils.RenderEmbeddedTemplate("password_reset.html", map[string]any{"OTP": otp, "ExpiryMinutes": 15})
 	if err != nil {
 		return fmt.Errorf("failed to render password reset template: %w", err)
 	}
