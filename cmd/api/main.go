@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	_ "github.com/ms-kanban-server/docs"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ms-kanban-server/config"
 	"github.com/ms-kanban-server/drivers/postgres"
@@ -14,6 +16,18 @@ import (
 	"go.uber.org/zap"
 )
 
+// @title PMT API
+// @version 1.0
+// @description PMT Backend API
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name PMT Team
+// @contact.email olivergot26@gmail.com
+
+// @license.name MIT
+
+// @host localhost:6369
+// @BasePath /api/v1
 func main() {
 
 	// Load configuration, initialize database connection, set up routes, and start the server

@@ -1,0 +1,457 @@
+basePath: /api/v1
+definitions:
+  dto.AuthTokensResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+    type: object
+  dto.ChangePasswordRequest:
+    properties:
+      new_password:
+        type: string
+      old_password:
+        type: string
+      user_id:
+        type: string
+    type: object
+  dto.Role:
+    enum:
+    - super_admin
+    - org_admin
+    - project_manager
+    - developer
+    - viewer
+    type: string
+    x-enum-varnames:
+    - RoleSuperAdmin
+    - RoleOrgAdmin
+    - RoleProjectManager
+    - RoleDeveloper
+    - RoleViewer
+  dto.SignInRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.SignUpRequest:
+    properties:
+      avatar_url:
+        type: string
+      email:
+        type: string
+      full_name:
+        type: string
+      organization_id:
+        type: string
+      password:
+        type: string
+      role:
+        $ref: '#/definitions/dto.Role'
+      timezone:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - full_name
+    - password
+    - username
+    type: object
+  dto.UpdateUserRequest:
+    properties:
+      avatar_url:
+        type: string
+      full_name:
+        type: string
+      timezone:
+        type: string
+      username:
+        type: string
+    type: object
+  models.Organization:
+    properties:
+      created_at:
+        type: string
+      domain:
+        type: string
+      id:
+        type: string
+      logo_url:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - domain
+    - logo_url
+    type: object
+  models.User:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      organization:
+        $ref: '#/definitions/models.Organization'
+      organization_id:
+        type: string
+      password_hash:
+        type: string
+      role:
+        type: string
+      timezone:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - password_hash
+    type: object
+  response.Details:
+    properties:
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  response.Error:
+    properties:
+      code:
+        $ref: '#/definitions/response.ErrorCode'
+      details:
+        items:
+          $ref: '#/definitions/response.Details'
+        type: array
+      message:
+        type: string
+      status_code:
+        type: integer
+    type: object
+  response.ErrorCode:
+    enum:
+    - BAD_REQUEST
+    - METHOD_NOT_ALLOWED
+    - VALIDATION_ERROR
+    - UNAUTHORIZED
+    - FORBIDDEN
+    - RESOURCE_NOT_FOUND
+    - CONFLICT
+    - BUSINESS_RULE_VIOLATION
+    - RATE_LIMIT_EXCEEDED
+    - INTERNAL_SERVER_ERROR
+    - SERVICE_UNAVAILABLE
+    - GATEWAY_TIMEOUT
+    type: string
+    x-enum-varnames:
+    - ErrBadRequest
+    - ErrMethodNotAllowed
+    - ErrValidation
+    - ErrUnauthorized
+    - ErrForbidden
+    - ErrNotFound
+    - ErrConflict
+    - ErrBusinessRule
+    - ErrRateLimitExceeded
+    - ErrInternalServerError
+    - ErrServiceUnavailable
+    - ErrGatewayTimeout
+  response.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/response.Error'
+      success:
+        type: boolean
+    type: object
+  response.Pagination:
+    properties:
+      has_next:
+        type: boolean
+      has_previous:
+        type: boolean
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  response.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/response.Pagination'
+      status_code:
+        type: integer
+      success:
+        type: boolean
+    type: object
+host: localhost:6369
+info:
+  contact:
+    email: olivergot26@gmail.com
+    name: PMT Team
+  description: PMT Backend API
+  license:
+    name: MIT
+  termsOfService: http://swagger.io/terms/
+  title: PMT API
+  version: "1.0"
+paths:
+  /auth/changepassword:
+    post:
+      consumes:
+      - application/json
+      description: Changes the password of the authenticated user.
+      parameters:
+      - description: Change Password Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Change password
+      tags:
+      - Authentication
+  /auth/logout:
+    post:
+      description: Revokes the user's refresh token and logs the user out.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - Authentication
+  /auth/mine:
+    get:
+      description: Returns the profile of the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.User'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - Users
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Generates a new access token using the refresh token.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthTokensResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Refresh access token
+      tags:
+      - Authentication
+  /auth/signin:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user and returns access and refresh tokens.
+      parameters:
+      - description: Sign In Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SignInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthTokensResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Sign in user
+      tags:
+      - Authentication
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account.
+      parameters:
+      - description: Sign Up Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - Authentication
+  /users/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: Updates user profile.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update User Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Update user
+      tags:
+      - Users
+swagger: "2.0"
