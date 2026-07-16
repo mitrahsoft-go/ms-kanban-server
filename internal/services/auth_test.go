@@ -47,6 +47,13 @@ func (s *stubAuthRepository) GetRefreshToken(tokenHash string) (models.RefreshTo
 	return s.refreshToken, nil
 }
 
+func (s *stubAuthRepository) ChangePassword(tokenHash string, userID uuid.UUID) *response.Error {
+	if s.err != nil {
+		return s.err
+	}
+	return nil
+}
+
 func TestSignInReturnsUnauthorizedForInvalidPassword(t *testing.T) {
 	hash, err := utils.HashPassword("correct-password")
 	if err != nil {
@@ -54,11 +61,11 @@ func TestSignInReturnsUnauthorizedForInvalidPassword(t *testing.T) {
 	}
 
 	repo := &stubAuthRepository{
-		user: models.User{ID: uuid.Must(uuid.NewV4()), 
-			Email: "user@example.com", 
-			PasswordHash: hash, 
-			Role: "developer", 
-			IsActive: true,
+		user: models.User{ID: uuid.Must(uuid.NewV4()),
+			Email:        "user@example.com",
+			PasswordHash: hash,
+			Role:         "developer",
+			IsActive:     true,
 		},
 	}
 	service := InitAuthService(repo, zap.NewNop())
