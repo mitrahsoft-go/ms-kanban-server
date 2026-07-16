@@ -93,6 +93,9 @@ func (d *authdatabase) SignInByID(id uuid.UUID) (models.User, *response.Error) {
 
 	if err := d.DB.Where("id = ?", id).First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+
+			d.logger.Error("The user associated with the refresh token could not be found in Repository layer",
+				zap.Error(err))
 			return models.User{}, &response.Error{
 				Code:       response.ErrUnauthorized,
 				StatusCode: http.StatusUnauthorized,
@@ -103,6 +106,9 @@ func (d *authdatabase) SignInByID(id uuid.UUID) (models.User, *response.Error) {
 				}},
 			}
 		}
+
+		d.logger.Error("Failed to retrieve user in Repository layer",
+			zap.Error(err))
 		return models.User{}, &response.Error{
 			Code:       response.ErrInternalServerError,
 			StatusCode: http.StatusInternalServerError,
@@ -163,10 +169,8 @@ func (d *authdatabase) StoreRefreshToken(token models.RefreshToken) *response.Er
 			}},
 		}
 
-		d.logger.Error(
-			"Database error occurred while storing refresh token in Repository layer",
-			zap.Error(err),
-		)
+		d.logger.Error("Database error occurred while storing refresh token in Repository layer",
+			zap.Error(err))
 
 		return &errorResponse
 	}
@@ -180,6 +184,9 @@ func (d *authdatabase) GetRefreshToken(userID string) (models.RefreshToken, *res
 
 	if err := d.DB.Where("user_id = ?", userID).First(&token).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+
+			d.logger.Error("Database error occurred while storing refresh token in Repository layer",
+				zap.Error(err))
 			return models.RefreshToken{}, &response.Error{
 				Code:       response.ErrUnauthorized,
 				StatusCode: http.StatusUnauthorized,
@@ -190,6 +197,9 @@ func (d *authdatabase) GetRefreshToken(userID string) (models.RefreshToken, *res
 				}},
 			}
 		}
+
+		d.logger.Error("Database error occurred while storing refresh token in Repository layer",
+			zap.Error(err))
 		return models.RefreshToken{}, &response.Error{
 			Code:       response.ErrInternalServerError,
 			StatusCode: http.StatusInternalServerError,

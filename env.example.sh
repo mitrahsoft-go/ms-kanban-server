@@ -13,8 +13,8 @@ export HTTP_PORT=6369
 export LOGGER_TYPE=  # Production or Development
 export LOGGER_LEVEL=debug #Info, Debug, Error, Warn, Fatal, Panic
 
- # Redis configs
-export REDIS_HOST=localhost
+# Redis configs
+export REDIS_HOST=redis 
 export REDIS_PORT=6379
 export REDIS_PASSWORD= # Your Password 
 

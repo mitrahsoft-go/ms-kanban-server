@@ -26,6 +26,7 @@ type Service interface {
 	SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResponse, *response.Error)
 	RefreshToken(credentials dto.RefreshTokenRequest) (*dto.AuthTokensResponse, *response.Error)
 	SignUp(credentials dto.SignUpRequest) *response.Error
+	Logout(UserID string) *response.Error
 	RequestPasswordReset(email string) *response.Error
 	ResetPassword(credentials dto.ResetPasswordRequest) *response.Error
 }
@@ -106,7 +107,7 @@ func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResp
 	expiresIn, err := utils.StringToInt(config.GetEnv("JWT_EXPIRY", "900"))
 	if err != nil {
 
-		s.logger.Error("Failed to set the expire time in Middleware Layer",
+		s.logger.Error("Failed to set the expire time in service Layer",
 			zap.String("ERROR : ", fmt.Sprintf("%v", err)))
 		return nil, err
 	}
@@ -114,7 +115,7 @@ func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResp
 	refreshExpiresIn, err := utils.StringToInt(config.GetEnv("REFRESH_TOKEN_EXPIRY", "604800"))
 	if err != nil {
 
-		s.logger.Error("Failed to set the expire time in Middleware Layer",
+		s.logger.Error("Failed to set the expire time in service Layer",
 			zap.String("ERROR : ", fmt.Sprintf("%v", err)))
 		return nil, err
 	}
@@ -200,7 +201,7 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 	expiresIn, err := utils.StringToInt(config.GetEnv("JWT_EXPIRY", "900"))
 	if err != nil {
 
-		s.logger.Error("Failed to set the expire time in Middleware Layer",
+		s.logger.Error("Failed to set the expire time in service Layer",
 			zap.String("ERROR : ", fmt.Sprintf("%v", err)))
 		return nil, err
 	}
@@ -347,26 +348,9 @@ func (s *authservice) SignUp(credentials dto.SignUpRequest) *response.Error {
 
 	passwordhash, errorResponse := utils.HashPassword(credentials.Password)
 	if errorResponse != nil {
-		return &response.Error{
-			Code:       response.ErrBadRequest,
-			StatusCode: errorResponse.StatusCode,
-			Message:    "BadRequest",
-			Details: []response.Details{
-				{
-					Field:   "Password",
-					Message: "Invalid password format",
-				},
-			},
-		}
-	}
-
-	result := models.User{
-		Email:        credentials.Email,
-		PasswordHash: passwordhash,
-		Role:         string(credentials.Role),
-		FullName:     credentials.FullName,
-		AvatarURL:    credentials.AvatarURL,
-		Timezone:     credentials.Timezone,
+		s.logger.Error("Failed Hashing Password before login in service layer",
+			zap.String("Email", credentials.Email), zap.Error(err))
+		return errorResponse
 	}
 
 	role := dto.Role(credentials.Role)
@@ -387,8 +371,20 @@ func (s *authservice) SignUp(credentials dto.SignUpRequest) *response.Error {
 		}
 	}
 
+	result := models.User{
+		Email:        credentials.Email,
+		PasswordHash: passwordhash,
+		Role:         string(credentials.Role),
+		FullName:     credentials.FullName,
+		UserName:     credentials.UserName,
+		AvatarURL:    credentials.AvatarURL,
+		Timezone:     credentials.Timezone,
+	}
+
 	organizationID, errorResponse := utils.StringToUUID(credentials.OrganizationID)
 	if errorResponse != nil {
+		s.logger.Error("Failed to convert the string into UUID in service layer",
+			zap.String("Email", credentials.Email), zap.Error(err))
 		return errorResponse
 	}
 
@@ -398,4 +394,21 @@ func (s *authservice) SignUp(credentials dto.SignUpRequest) *response.Error {
 
 	return s.Repo.SignUp(result)
 
+}
+
+func (s *authservice) Logout(UserID string) *response.Error {
+
+	oldToken, err := s.Repo.GetRefreshToken(UserID)
+	if err != nil {
+		return err
+	}
+
+	expiresAt := time.Now()
+
+	s.Repo.StoreRefreshToken(models.RefreshToken{
+		UserID:    oldToken.ID,
+		ExpiresAt: expiresAt,
+	})
+
+	return nil
 }
