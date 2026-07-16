@@ -30,7 +30,7 @@ type Organization struct {
 type User struct {
 	ID             uuid.UUID      `json:"id" gorm:"primaryKey;type:uuid"`
 	OrganizationID *uuid.UUID     `json:"organization_id,omitempty" gorm:"type:uuid;index:idx_users_organization_id"`
-	Organization   Organization   `json:"organization"`
+	Organization   Organization   `json:"organization,omitzero"`
 	FullName       string         `json:"name" gorm:"size:100;not null"`
 	UserName       string         `json:"username" gorm:"column:username;size:30;not null;unique;index:idx_users_username"`
 	Email          string         `json:"email" validate:"required,email" gorm:"size:100;not null;unique;index:idx_users_email"`

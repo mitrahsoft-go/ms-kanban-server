@@ -26,6 +26,7 @@ type Service interface {
 	Logout(UserID string) *response.Error
 	ChangePassword(payload dto.ChangePasswordRequest) *response.Error
 	UpdateUser(payload dto.UpdateUserRequest, userID uuid.UUID) *response.Error
+	GetUser(userID uuid.UUID) (models.User, *response.Error)
 }
 
 func InitAuthService(repo repository.Repository, logger *zap.Logger) Service {
@@ -367,7 +368,7 @@ func (s *authservice) ChangePassword(payload dto.ChangePasswordRequest) *respons
 
 func (s *authservice) UpdateUser(payload dto.UpdateUserRequest, userID uuid.UUID) *response.Error {
 
-	if len(payload.FullName) >30 {
+	if len(payload.FullName) > 30 {
 		s.logger.Error("Validated failure in Full Name  in service layer")
 		return &response.Error{
 			Code:       response.ErrBadRequest,
@@ -406,4 +407,9 @@ func (s *authservice) UpdateUser(payload dto.UpdateUserRequest, userID uuid.UUID
 
 	return s.Repo.UpdateUser(userID, req)
 
+}
+
+func (s *authservice) GetUser(userID uuid.UUID) (models.User, *response.Error) {
+
+	return s.Repo.SignInByID(userID)
 }

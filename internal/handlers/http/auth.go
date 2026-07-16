@@ -476,3 +476,54 @@ func (h *AuthHandler) Updateuser(g *gin.Context) {
 	g.JSON(successResponse.StatusCode, successResponse)
 
 }
+
+func (h *AuthHandler) GetUser(g *gin.Context) {
+
+	userID, exist := g.Get("user_id")
+	if !exist {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "invalid User ID",
+				Details: []response.Details{
+					{
+						Field:   "User ID",
+						Message: "User Id missing",
+					},
+				},
+			},
+		}
+
+		h.logger.Error("User Id missing  in Handler Layer")
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+	userIDStr := userID.(string)
+
+	id, errorResponse := utils.StringToUUID(userIDStr)
+	if errorResponse != nil {
+		h.logger.Error("Failed to convert the string into UUID in Handler layer")
+		return
+	}
+
+	result, err := h.service.GetUser(id)
+	if err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
+		return
+	}
+
+	successResponse := &response.SuccessResponse{
+		Message:    "User detail received successfully",
+		StatusCode: http.StatusOK,
+		Success:    true,
+		Data:       result,
+	}
+	g.JSON(successResponse.StatusCode, successResponse)
+
+}
