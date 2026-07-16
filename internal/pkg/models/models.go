@@ -31,7 +31,8 @@ type User struct {
 	ID             uuid.UUID
 	OrganizationID *uuid.UUID     `json:"organization_id,omitempty" gorm:"index:idx_users_organization_id"`
 	Organization   Organization   `json:"organization"`
-	FullName       string         `json:"name" gorm:"size:100;not null;unique"`
+	FullName       string         `json:"name" gorm:"size:100;not null"`
+	UserName       string         `json:"user_name" gorm:"size:100;not null;unique;index:idx_users_user_name"`
 	Email          string         `json:"email" validate:"required,email" gorm:"size:100;not null;unique;index:idx_users_email"`
 	PasswordHash   string         `json:"password_hash" validate:"required"`
 	Role           string         `json:"role" gorm:"size:30;index:idx_users_role"`
