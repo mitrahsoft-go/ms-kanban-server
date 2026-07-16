@@ -22,3 +22,14 @@ export REDIS_PASSWORD= # Your Password
 export JWT_SECRET_KEY = # Your Key 
 export JWT_EXPIRY= # Set the duration (in Seconds)
 export REFRESH_TOKEN_EXPIRY= # Set the duration (in Seconds)
+
+# Email configs
+export BREVO_API_KEY= # Your API Key
+export BREVO_FROM_EMAIL= # Sender email for Brevo and fallback
+
+# Gmail SMTP configs
+export GMAIL_SMTP_HOST=smtp.gmail.com
+export GMAIL_SMTP_PORT=587
+export GMAIL_SMTP_USERNAME= # Your Gmail address (e.g. yourgmail@gmail.com)
+export GMAIL_SMTP_PASSWORD= # Your Gmail app password (16-character). Do NOT commit secrets here.
+export GMAIL_FROM_EMAIL= # Optional sender email for Gmail SMTP. Defaults to BREVO_FROM_EMAIL if blank

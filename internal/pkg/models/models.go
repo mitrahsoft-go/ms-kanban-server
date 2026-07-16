@@ -56,6 +56,17 @@ type RefreshToken struct {
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index:idx_refresh_tokens_deleted_at"`
 }
 
+type PasswordResetOTP struct {
+	ID        uuid.UUID      `json:"id" gorm:"primaryKey"`
+	UserID    uuid.UUID      `json:"user_id" gorm:"index:idx_password_reset_otps_user_id;not null"`
+	OTPHash   string         `json:"-" gorm:"column:otp_hash;size:255;not null"`
+	ExpiresAt time.Time      `json:"expires_at" gorm:"not null"`
+	UsedAt    *time.Time     `json:"used_at,omitempty" gorm:"index"`
+	CreatedAt time.Time      `json:"created_at" gorm:"not null"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index:idx_password_reset_otps_deleted_at"`
+}
+
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	if u.ID == uuid.Nil {
 		u.ID, err = uuid.NewV7()
@@ -74,4 +85,15 @@ func (r *RefreshToken) BeforeCreate(tx *gorm.DB) (err error) {
 		}
 	}
 	return
+}
+
+func (p *PasswordResetOTP) BeforeCreate(tx *gorm.DB) error {
+	if p.ID == uuid.Nil {
+		var err error
+		p.ID, err = uuid.NewV7()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
