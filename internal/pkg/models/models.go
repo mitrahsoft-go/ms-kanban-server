@@ -18,18 +18,18 @@ const (
 )
 
 type Organization struct {
-	ID        uuid.UUID      `json:"id" gorm:"primaryKey"`
-	Name      string         `json:"name" gorm:"size:50;not null;unique"`
+	ID        uuid.UUID      `json:"id" gorm:"primaryKey;type:uuid"`
+	Name      string         `json:"name" gorm:"size:50;not null;unique;index:idx_organization_name"`
 	Domain    *string        `json:"domain" validate:"required" gorm:"size:150;not null;unique"`
 	LogoURL   *string        `json:"logo_url" validate:"required" gorm:"size:150;not null"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	CreatedAt time.Time      `json:"created_at" gorm:"not null;type:timestamptz"`
+	UpdatedAt time.Time      `json:"updated_at" gorm:"type:timestamptz"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index:idx_organization_deleted_at"`
 }
 
 type User struct {
-	ID             uuid.UUID
-	OrganizationID *uuid.UUID     `json:"organization_id,omitempty" gorm:"index:idx_users_organization_id"`
+	ID             uuid.UUID      `json:"id" gorm:"primaryKey;type:uuid"`
+	OrganizationID *uuid.UUID     `json:"organization_id,omitempty" gorm:"type:uuid;index:idx_users_organization_id"`
 	Organization   Organization   `json:"organization"`
 	FullName       string         `json:"name" gorm:"size:100;not null"`
 	UserName       string         `json:"username" gorm:"column:username;size:30;not null;unique;index:idx_users_username"`
@@ -39,21 +39,21 @@ type User struct {
 	AvatarURL      *string        `json:"avatar_url" gorm:"size:255"`
 	Timezone       string         `json:"timezone" gorm:"size:50;default:'UTC'"`
 	IsActive       bool           `json:"is_active" gorm:"default:true"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
+	CreatedAt      time.Time      `json:"created_at" gorm:"not null;type:timestamptz"`
+	UpdatedAt      time.Time      `json:"updated_at" gorm:"type:timestamptz"`
 	DeletedAt      gorm.DeletedAt `json:"-" gorm:"index:idx_users_deleted_at"`
 }
 
 type RefreshToken struct {
-	ID        uuid.UUID      `json:"id" gorm:"primaryKey"`
-	UserID    uuid.UUID      `json:"user_id" gorm:"index:idx_refresh_tokens_user_id;not null;unique"`
+	ID        uuid.UUID      `json:"id" gorm:"primaryKey;type:uuid"`
+	UserID    uuid.UUID      `json:"user_id" gorm:"type:uuid;index:idx_refresh_tokens_user_id;not null;unique"`
 	TokenHash string         `json:"token_hash" gorm:"size:255;not null;unique"`
 	UserAgent *string        `json:"user_agent,omitempty" gorm:"type:text"`
 	IPAddress *string        `json:"ip_address,omitempty" gorm:"size:45"`
-	ExpiresAt time.Time      `json:"expires_at" gorm:"not null"`
-	RevokedAt *time.Time     `json:"revoked_at,omitempty"`
-	CreatedAt time.Time      `json:"created_at" gorm:"not null"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	ExpiresAt time.Time      `json:"expires_at" gorm:"not null;type:timestamptz"`
+	RevokedAt *time.Time     `json:"revoked_at,omitempty" gorm:"type:timestamptz"`
+	CreatedAt time.Time      `json:"created_at" gorm:"not null;type:timestamptz"`
+	UpdatedAt time.Time      `json:"updated_at" gorm:"type:timestamptz"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index:idx_refresh_tokens_deleted_at"`
 }
 
