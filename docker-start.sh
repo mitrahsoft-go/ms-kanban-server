@@ -2,4 +2,4 @@
 source ./env.sh
 
 # Start the application
-go run ./cmd/api/main.go
+docker compose up -d
