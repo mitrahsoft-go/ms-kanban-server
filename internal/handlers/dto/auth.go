@@ -34,7 +34,7 @@ type SignUpRequest struct {
 	Email          string  `json:"email" validate:"required,email"`
 	Password       string  `json:"password" validate:"required"`
 	FullName       string  `json:"full_name" validate:"required"`
-	UserName       string  `json:"user_name" validate:"required"`
+	UserName       string  `json:"username" validate:"required"`
 	OrganizationID string  `json:"organization_id,omitempty"`
 	Role           Role    `json:"role" gorm:"size:30"`
 	AvatarURL      *string `json:"avatar_url" gorm:"size:255"`
