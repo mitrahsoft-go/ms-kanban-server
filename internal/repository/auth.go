@@ -18,9 +18,9 @@ import (
 )
 
 type Repository interface {
-	SignIn(email string) (models.User, *response.Error)
-	SignInByID(id uuid.UUID) (models.User, *response.Error)
-	SignUp(row models.User) *response.Error
+	GetByEmail(email string) (models.User, *response.Error)
+	GetByID(id uuid.UUID) (models.User, *response.Error)
+	CreateUser(row models.User) *response.Error
 	StoreRefreshToken(token models.RefreshToken) *response.Error
 	GetRefreshToken(userID string) (models.RefreshToken, *response.Error)
 	ChangePassword(password string, userID uuid.UUID) *response.Error
@@ -30,6 +30,7 @@ type Repository interface {
 	GetPasswordResetOTP(userID uuid.UUID, otp string) (models.PasswordResetOTP, *response.Error)
 	UpdateUserPassword(userID uuid.UUID, passwordHash string) *response.Error
 	RevokeRefreshTokens(userID uuid.UUID) *response.Error
+	UpdateUser(userID uuid.UUID, req models.User) *response.Error
 }
 
 func InitAuthRepository(db *gorm.DB, redisClient *redisclient.Client, logger *zap.Logger) Repository {
@@ -46,7 +47,7 @@ type authdatabase struct {
 	logger      *zap.Logger
 }
 
-func (d *authdatabase) SignIn(email string) (models.User, *response.Error) {
+func (d *authdatabase) GetByEmail(email string) (models.User, *response.Error) {
 
 	var row models.User
 
@@ -88,7 +89,7 @@ func (d *authdatabase) SignIn(email string) (models.User, *response.Error) {
 	return row, nil
 }
 
-func (d *authdatabase) SignInByID(id uuid.UUID) (models.User, *response.Error) {
+func (d *authdatabase) GetByID(id uuid.UUID) (models.User, *response.Error) {
 
 	var row models.User
 
@@ -122,7 +123,7 @@ func (d *authdatabase) SignInByID(id uuid.UUID) (models.User, *response.Error) {
 	return row, nil
 }
 
-func (d *authdatabase) SignUp(row models.User) *response.Error {
+func (d *authdatabase) CreateUser(row models.User) *response.Error {
 
 	if err := d.DB.Create(&row).Error; err != nil {
 		errorResponse := response.Error{
@@ -324,5 +325,51 @@ func (d *authdatabase) RevokeRefreshTokens(userID uuid.UUID) *response.Error {
 	if err := d.DB.Model(&models.RefreshToken{}).Where("user_id = ?", userID).Update("revoked_at", time.Now()).Error; err != nil {
 		return &response.Error{Code: response.ErrInternalServerError, StatusCode: http.StatusInternalServerError, Message: "Failed to revoke refresh tokens", Details: []response.Details{{Message: err.Error()}}}
 	}
+	return nil
+}
+
+func (d *authdatabase) UpdateUser(userID uuid.UUID, req models.User) *response.Error {
+
+	result := d.DB.
+		Model(&models.User{}).
+		Where("id = ?", userID).
+		Updates(map[string]interface{}{
+			"full_name":  req.FullName,
+			"username":   req.UserName,
+			"avatar_url": req.AvatarURL,
+			"timezone":   req.Timezone,
+		})
+
+	if result.Error != nil {
+
+		d.logger.Error("Database error occurred while updating user in Repository layer",
+			zap.Error(result.Error))
+
+		return &response.Error{
+			Code:       response.ErrInternalServerError,
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to update user",
+			Details: []response.Details{{
+				Message: "Failed updating user: " + result.Error.Error(),
+			}},
+		}
+	}
+
+	if result.RowsAffected == 0 {
+
+		d.logger.Error("User not found while updating user",
+			zap.String("user_id", fmt.Sprint(userID)))
+
+		return &response.Error{
+			Code:       response.ErrUnauthorized,
+			StatusCode: http.StatusUnauthorized,
+			Message:    "User not found",
+			Details: []response.Details{{
+				Field:   "user_id",
+				Message: "The specified user does not exist",
+			}},
+		}
+	}
+
 	return nil
 }

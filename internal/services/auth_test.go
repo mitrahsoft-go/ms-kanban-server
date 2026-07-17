@@ -24,21 +24,21 @@ type stubAuthRepository struct {
 	storedOTPs           []models.PasswordResetOTP
 }
 
-func (s *stubAuthRepository) SignIn(email string) (models.User, *response.Error) {
+func (s *stubAuthRepository) GetByEmail(email string) (models.User, *response.Error) {
 	if s.err != nil {
 		return models.User{}, s.err
 	}
 	return s.user, nil
 }
 
-func (s *stubAuthRepository) SignInByID(id uuid.UUID) (models.User, *response.Error) {
+func (s *stubAuthRepository) GetByID(id uuid.UUID) (models.User, *response.Error) {
 	if s.err != nil {
 		return models.User{}, s.err
 	}
 	return s.user, nil
 }
 
-func (s *stubAuthRepository) SignUp(row models.User) *response.Error {
+func (s *stubAuthRepository) CreateUser(row models.User) *response.Error {
 	return nil
 }
 
@@ -54,6 +54,12 @@ func (s *stubAuthRepository) GetRefreshToken(userID string) (models.RefreshToken
 }
 
 func (s *stubAuthRepository) ChangePassword(tokenHash string, userID uuid.UUID) *response.Error {
+	if s.err != nil {
+		return s.err
+	}
+	return nil
+}
+func (s *stubAuthRepository) UpdateUser(userID uuid.UUID, req models.User) *response.Error {
 	if s.err != nil {
 		return s.err
 	}

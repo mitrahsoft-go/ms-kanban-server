@@ -40,9 +40,9 @@ type SignUpRequest struct {
 	FullName       string  `json:"full_name" validate:"required"`
 	UserName       string  `json:"username" validate:"required"`
 	OrganizationID string  `json:"organization_id,omitempty"`
-	Role           Role    `json:"role" gorm:"size:30"`
-	AvatarURL      *string `json:"avatar_url" gorm:"size:255"`
-	Timezone       string  `json:"timezone" gorm:"size:50;default:'UTC'"`
+	Role           Role    `json:"role"`
+	AvatarURL      *string `json:"avatar_url"`
+	Timezone       string  `json:"timezone"`
 }
 
 type PasswordResetRequest struct {
@@ -72,4 +72,12 @@ type ChangePasswordRequest struct {
 	UserID      uuid.UUID `json:"user_id"`
 	OldPassword string    `json:"old_password"`
 	NewPassword string    `json:"new_password"`
+}
+
+
+type UpdateUserRequest struct {
+	FullName       string  `json:"full_name"`
+	UserName       string  `json:"username"`
+	AvatarURL      *string `json:"avatar_url"`
+	Timezone       string  `json:"timezone"`
 }

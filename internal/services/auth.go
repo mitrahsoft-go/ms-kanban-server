@@ -30,6 +30,8 @@ type Service interface {
 	ChangePassword(payload dto.ChangePasswordRequest) *response.Error
 	RequestPasswordReset(email string) *response.Error
 	ResetPassword(credentials dto.ResetPasswordRequest) *response.Error
+	UpdateUser(payload dto.UpdateUserRequest, userID uuid.UUID) *response.Error
+	GetUser(userID uuid.UUID) (models.User, *response.Error)
 }
 
 func InitAuthService(repo repository.Repository, logger *zap.Logger) Service {
@@ -46,7 +48,7 @@ type authservice struct {
 
 func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResponse, *response.Error) {
 
-	result, err := s.Repo.SignIn(credentials.Email)
+	result, err := s.Repo.GetByEmail(credentials.Email)
 	if err != nil {
 		s.logger.Warn("Login failed during user lookup",
 			zap.String("email", credentials.Email),
@@ -178,7 +180,7 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 		}
 	}
 
-	user, userErr := s.Repo.SignInByID(oldToken.UserID)
+	user, userErr := s.Repo.GetByID(oldToken.UserID)
 	if userErr != nil {
 		return nil, userErr
 	}
@@ -393,7 +395,7 @@ func (s *authservice) SignUp(credentials dto.SignUpRequest) *response.Error {
 		result.OrganizationID = &organizationID
 	}
 
-	return s.Repo.SignUp(result)
+	return s.Repo.CreateUser(result)
 
 }
 
@@ -416,7 +418,7 @@ func (s *authservice) Logout(UserID string) *response.Error {
 
 func (s *authservice) ChangePassword(payload dto.ChangePasswordRequest) *response.Error {
 
-	result, err := s.Repo.SignInByID(payload.UserID)
+	result, err := s.Repo.GetByID(payload.UserID)
 	if err != nil {
 		s.logger.Warn("Login failed during user lookup",
 			zap.String("error", err.Message))
@@ -459,6 +461,54 @@ func (s *authservice) ChangePassword(payload dto.ChangePasswordRequest) *respons
 		return errorResponse
 	}
 
-	return s.Repo.ChangePassword(passwordhash,payload.UserID)
+	return s.Repo.ChangePassword(passwordhash, payload.UserID)
 
+}
+
+func (s *authservice) UpdateUser(payload dto.UpdateUserRequest, userID uuid.UUID) *response.Error {
+
+	if len(payload.FullName) > 30 {
+		s.logger.Error("Validated failure in Full Name  in service layer")
+		return &response.Error{
+			Code:       response.ErrBadRequest,
+			StatusCode: http.StatusBadRequest,
+			Message:    "BadRequest",
+			Details: []response.Details{
+				{
+					Field:   "Full Name",
+					Message: "Invalid Full Name format",
+				},
+			},
+		}
+	}
+
+	if len(payload.UserName) > 30 {
+		s.logger.Error("Validated failure in Full Name  in service layer")
+		return &response.Error{
+			Code:       response.ErrBadRequest,
+			StatusCode: http.StatusBadRequest,
+			Message:    "BadRequest",
+			Details: []response.Details{
+				{
+					Field:   "UserName",
+					Message: "Invalid UserName format",
+				},
+			},
+		}
+	}
+
+	req := models.User{
+		FullName:  payload.FullName,
+		UserName:  payload.UserName,
+		AvatarURL: payload.AvatarURL,
+		Timezone:  payload.Timezone,
+	}
+
+	return s.Repo.UpdateUser(userID, req)
+
+}
+
+func (s *authservice) GetUser(userID uuid.UUID) (models.User, *response.Error) {
+
+	return s.Repo.GetByID(userID)
 }

@@ -6,6 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ms-kanban-server/drivers/redis"
 	"github.com/ms-kanban-server/internal/pkg/models"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func SetupRoutes(deps models.Config) {
@@ -59,6 +61,7 @@ func SetupRoutes(deps models.Config) {
 		})
 	})
 
+	deps.Router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	api := deps.Router.Group("/api/v1")
 	{
 		AuthRoutes(deps, api)
