@@ -57,7 +57,7 @@ func (d *authdatabase) GetByEmail(email string) (models.User, *response.Error) {
 			errorResponse := response.Error{
 				Code:       response.ErrUnauthorized,
 				StatusCode: http.StatusUnauthorized,
-				Message:    "Enter valid Email or Password before login",
+				Message:    "Enter valid Email/Password",
 				Details: []response.Details{
 					{
 						Field:   "Email/Password",
@@ -65,7 +65,7 @@ func (d *authdatabase) GetByEmail(email string) (models.User, *response.Error) {
 					},
 				},
 			}
-			d.logger.Error("User not found in database in Repository layer",
+			d.logger.Error("User not found in database",
 				zap.String("Email", email), zap.Error(err))
 			return models.User{}, &errorResponse
 		}
@@ -76,12 +76,12 @@ func (d *authdatabase) GetByEmail(email string) (models.User, *response.Error) {
 			Message:    "InternalServerError",
 			Details: []response.Details{
 				{
-					Message: "Failed to Login : " + err.Error(),
+					Message: "Failed to Login",
 				},
 			},
 		}
 
-		d.logger.Error("Database error occurred in Repository layer",
+		d.logger.Error("Database error occurred",
 			zap.String("Email", email), zap.Error(err))
 		return models.User{}, &errorResponse
 	}
@@ -96,7 +96,7 @@ func (d *authdatabase) GetByID(id uuid.UUID) (models.User, *response.Error) {
 	if err := d.DB.Where("id = ?", id).First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 
-			d.logger.Error("The user associated with the refresh token could not be found in Repository layer",
+			d.logger.Error("The user associated with the refresh token could not be found",
 				zap.Error(err))
 			return models.User{}, &response.Error{
 				Code:       response.ErrUnauthorized,
@@ -109,14 +109,14 @@ func (d *authdatabase) GetByID(id uuid.UUID) (models.User, *response.Error) {
 			}
 		}
 
-		d.logger.Error("Failed to retrieve user in Repository layer",
+		d.logger.Error("Failed to retrieve user",
 			zap.Error(err))
 		return models.User{}, &response.Error{
 			Code:       response.ErrInternalServerError,
 			StatusCode: http.StatusInternalServerError,
 			Message:    "Failed to retrieve user",
 			Details: []response.Details{{
-				Message: "Failed querying user : " + err.Error(),
+				Message: "Failed querying user",
 			}},
 		}
 	}
@@ -132,12 +132,12 @@ func (d *authdatabase) CreateUser(row models.User) *response.Error {
 			Message:    "Failed to Register",
 			Details: []response.Details{
 				{
-					Message: "Failed inserting the row : " + err.Error(),
+					Message: "Failed inserting the row",
 				},
 			},
 		}
 
-		d.logger.Error("Database error occurred in Repository layer",
+		d.logger.Error("Database error occurred",
 			zap.Error(err))
 		return &errorResponse
 	}
@@ -167,11 +167,11 @@ func (d *authdatabase) StoreRefreshToken(token models.RefreshToken) *response.Er
 			StatusCode: http.StatusInternalServerError,
 			Message:    "Failed to store refresh token",
 			Details: []response.Details{{
-				Message: "Failed storing refresh token: " + err.Error(),
+				Message: "Failed storing refresh token",
 			}},
 		}
 
-		d.logger.Error("Database error occurred while storing refresh token in Repository layer",
+		d.logger.Error("Database error occurred while storing refresh token",
 			zap.Error(err))
 
 		return &errorResponse
@@ -187,7 +187,7 @@ func (d *authdatabase) GetRefreshToken(userID string) (models.RefreshToken, *res
 	if err := d.DB.Where("user_id = ?", userID).First(&token).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 
-			d.logger.Error("Database error occurred while storing refresh token in Repository layer",
+			d.logger.Error("Database error occurred while storing refresh token",
 				zap.Error(err))
 			return models.RefreshToken{}, &response.Error{
 				Code:       response.ErrUnauthorized,
@@ -200,14 +200,14 @@ func (d *authdatabase) GetRefreshToken(userID string) (models.RefreshToken, *res
 			}
 		}
 
-		d.logger.Error("Database error occurred while storing refresh token in Repository layer",
+		d.logger.Error("Database error occurred while storing refresh token",
 			zap.Error(err))
 		return models.RefreshToken{}, &response.Error{
 			Code:       response.ErrInternalServerError,
 			StatusCode: http.StatusInternalServerError,
 			Message:    "Failed to read refresh token",
 			Details: []response.Details{{
-				Message: "Failed querying refresh token : " + err.Error(),
+				Message: "Failed querying refresh token",
 			}},
 		}
 	}
@@ -222,7 +222,7 @@ func (d *authdatabase) ChangePassword(password string, userID uuid.UUID) *respon
 		Where("id = ?", userID).
 		Update("password_hash", password).Error; err != nil {
 
-		d.logger.Error("Database error occurred while updating user password in Repository layer",
+		d.logger.Error("Database error occurred while updating user password",
 			zap.Error(err))
 
 		return &response.Error{
@@ -230,7 +230,7 @@ func (d *authdatabase) ChangePassword(password string, userID uuid.UUID) *respon
 			StatusCode: http.StatusInternalServerError,
 			Message:    "Failed to update password",
 			Details: []response.Details{{
-				Message: "Failed updating password: " + err.Error(),
+				Message: "Failed updating password",
 			}},
 		}
 	}
@@ -342,7 +342,7 @@ func (d *authdatabase) UpdateUser(userID uuid.UUID, req models.User) *response.E
 
 	if result.Error != nil {
 
-		d.logger.Error("Database error occurred while updating user in Repository layer",
+		d.logger.Error("Database error occurred while updating user",
 			zap.Error(result.Error))
 
 		return &response.Error{

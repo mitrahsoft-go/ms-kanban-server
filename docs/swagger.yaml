@@ -22,6 +22,15 @@ definitions:
       user_id:
         type: string
     type: object
+  dto.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+      user_id:
+        type: string
+    required:
+    - refresh_token
+    type: object
   dto.Role:
     enum:
     - super_admin
@@ -68,7 +77,6 @@ definitions:
     - email
     - full_name
     - password
-    - username
     type: object
   dto.UpdateUserRequest:
     properties:
@@ -317,6 +325,13 @@ paths:
       consumes:
       - application/json
       description: Generates a new access token using the refresh token.
+      parameters:
+      - description: refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenRequest'
       produces:
       - application/json
       responses:
@@ -421,11 +436,6 @@ paths:
       - application/json
       description: Updates user profile.
       parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
       - description: Update User Request
         in: body
         name: request
@@ -451,7 +461,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Update user
       tags:
       - Users
+securityDefinitions:
+  BearerAuth:
+    description: 'Enter your JWT token in the format: Bearer <your-token>'
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

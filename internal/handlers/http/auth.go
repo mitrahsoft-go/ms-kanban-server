@@ -57,7 +57,7 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 			},
 		}
 
-		h.logger.Error("Invalid request payload in Handler Layer",
+		h.logger.Error("Invalid request payload",
 			zap.Error(err))
 
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
@@ -70,7 +70,7 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 		for _, fieldErr := range err.(validator.ValidationErrors) {
 			details = append(details, response.Details{
 				Field:   fieldErr.Field(),
-				Message: fmt.Sprintf("failed on '%s' validation in Handler Layer", fieldErr.Tag()),
+				Message: fmt.Sprintf("Validation Failed on '%s'", fieldErr.Tag()),
 			})
 		}
 
@@ -84,20 +84,20 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 			},
 		}
 
-		h.logger.Error("Validation failed in Handler Layer",
+		h.logger.Error("Validation failed",
 			zap.Error(err))
 
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}
 
-	if utils.ValidatedPassword(payload.Password) {
+	if utils.ValidatePassword(payload.Password) {
 		errorResponse := &response.ErrorResponse{
 			Success: false,
 			Error: response.Error{
 				Code:       response.ErrValidation,
 				StatusCode: http.StatusBadRequest,
-				Message:    "Validation failed",
+				Message:    "Validation Failure",
 				Details: []response.Details{
 					{
 						Field:   "password",
@@ -107,7 +107,7 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 			},
 		}
 
-		h.logger.Error("Validation failed for password in Handler Layer")
+		h.logger.Error("Validation failed for password")
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}
@@ -164,7 +164,7 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 			},
 		}
 
-		h.logger.Error("Invalid request payload in Handler Layer",
+		h.logger.Error("Invalid request payload",
 			zap.Error(err))
 
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
@@ -177,7 +177,7 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 		for _, fieldErr := range err.(validator.ValidationErrors) {
 			details = append(details, response.Details{
 				Field:   fieldErr.Field(),
-				Message: fmt.Sprintf("failed on '%s' validation", fieldErr.Tag()),
+				Message: fmt.Sprintf("Validation Failed on '%s'", fieldErr.Tag()),
 			})
 		}
 
@@ -191,7 +191,7 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 			},
 		}
 
-		h.logger.Error("Validation failed in Handler Layer",
+		h.logger.Error("Validation failed",
 			zap.Error(err))
 
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
@@ -252,7 +252,7 @@ func (h *AuthHandler) ResetPassword(g *gin.Context) {
 		return
 	}
 
-	if utils.ValidatedPassword(payload.NewPassword) {
+	if utils.ValidatePassword(payload.NewPassword) {
 		g.JSON(http.StatusBadRequest, &response.ErrorResponse{Success: false, Error: response.Error{Code: response.ErrValidation, StatusCode: http.StatusBadRequest, Message: "Validation failed", Details: []response.Details{{Field: "new_password", Message: "must contain at least one uppercase/lowercase letter, one number and one special character"}}}})
 		return
 	}
@@ -274,6 +274,7 @@ func (h *AuthHandler) ResetPassword(g *gin.Context) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
+// @Param        request body dto.RefreshTokenRequest true "refresh token"
 // @Success      200 {object} response.SuccessResponse{data=dto.AuthTokensResponse}
 // @Failure      401 {object} response.ErrorResponse
 // @Failure      500 {object} response.ErrorResponse
@@ -288,7 +289,7 @@ func (h *AuthHandler) RefreshToken(g *gin.Context) {
 			Error: response.Error{
 				Code:       response.ErrBadRequest,
 				StatusCode: http.StatusBadRequest,
-				Message:    "Invalid request payload in Handler Layer",
+				Message:    "Invalid request payload",
 				Details: []response.Details{{
 					Field:   "body",
 					Message: err.Error(),
@@ -296,7 +297,7 @@ func (h *AuthHandler) RefreshToken(g *gin.Context) {
 			},
 		}
 
-		h.logger.Error("Invalid request payload in Handler Layer",
+		h.logger.Error("Invalid request payload",
 			zap.Error(err))
 
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
@@ -309,7 +310,7 @@ func (h *AuthHandler) RefreshToken(g *gin.Context) {
 		for _, fieldErr := range err.(validator.ValidationErrors) {
 			details = append(details, response.Details{
 				Field:   fieldErr.Field(),
-				Message: fmt.Sprintf("failed on '%s' validation in Handler Layer", fieldErr.Tag()),
+				Message: fmt.Sprintf("Validation Failed on '%s'", fieldErr.Tag()),
 			})
 		}
 		errorResponse := &response.ErrorResponse{
@@ -322,7 +323,7 @@ func (h *AuthHandler) RefreshToken(g *gin.Context) {
 			},
 		}
 
-		h.logger.Error("Validation failed in Handler Layer",
+		h.logger.Error("Validation failed",
 			zap.Error(err))
 
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
@@ -336,17 +337,17 @@ func (h *AuthHandler) RefreshToken(g *gin.Context) {
 			Error: response.Error{
 				Code:       response.ErrValidation,
 				StatusCode: http.StatusBadRequest,
-				Message:    "invalid User ID",
+				Message:    "Invalid User ID",
 				Details: []response.Details{
 					{
 						Field:   "User ID",
-						Message: "User Id missing",
+						Message: "User Id Invalid/Missing",
 					},
 				},
 			},
 		}
 
-		h.logger.Error("User Id missing  in Handler Layer")
+		h.logger.Error("User Id Invalid/Missing ")
 
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
@@ -392,17 +393,17 @@ func (h *AuthHandler) Logout(g *gin.Context) {
 			Error: response.Error{
 				Code:       response.ErrValidation,
 				StatusCode: http.StatusBadRequest,
-				Message:    "invalid User ID",
+				Message:    "Invalid User ID",
 				Details: []response.Details{
 					{
 						Field:   "User ID",
-						Message: "User Id missing",
+						Message: "User Id Invalid/Missing",
 					},
 				},
 			},
 		}
 
-		h.logger.Error("User Id missing  in Handler Layer")
+		h.logger.Error("User Id Invalid/Missing ")
 
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
@@ -451,7 +452,7 @@ func (h *AuthHandler) ChangePassword(g *gin.Context) {
 			Error: response.Error{
 				Code:       response.ErrBadRequest,
 				StatusCode: http.StatusBadRequest,
-				Message:    "Invalid request payload in Handler Layer",
+				Message:    "Invalid request payload",
 				Details: []response.Details{{
 					Field:   "body",
 					Message: err.Error(),
@@ -459,7 +460,7 @@ func (h *AuthHandler) ChangePassword(g *gin.Context) {
 			},
 		}
 
-		h.logger.Error("Invalid request payload in Handler Layer",
+		h.logger.Error("Invalid request payload",
 			zap.Error(err))
 
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
@@ -473,17 +474,17 @@ func (h *AuthHandler) ChangePassword(g *gin.Context) {
 			Error: response.Error{
 				Code:       response.ErrValidation,
 				StatusCode: http.StatusBadRequest,
-				Message:    "invalid User ID",
+				Message:    "Invalid User ID",
 				Details: []response.Details{
 					{
 						Field:   "User ID",
-						Message: "User Id missing",
+						Message: "User Id Invalid/Missing",
 					},
 				},
 			},
 		}
 
-		h.logger.Error("User Id missing  in Handler Layer")
+		h.logger.Error("User Id Invalid/Missing")
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}
@@ -491,7 +492,7 @@ func (h *AuthHandler) ChangePassword(g *gin.Context) {
 
 	id, errorResponse := utils.StringToUUID(userIDStr)
 	if errorResponse != nil {
-		h.logger.Error("Failed to convert the string into UUID in Handler layer")
+		h.logger.Error("Failed to convert the string into UUID")
 		return
 	}
 	payload.UserID = id
@@ -522,7 +523,7 @@ func (h *AuthHandler) ChangePassword(g *gin.Context) {
 // @Tags         Users
 // @Accept       json
 // @Produce      json
-// @Param        id path string true "User ID"
+// @Security	 BearerAuth
 // @Param        request body dto.UpdateUserRequest true "Update User Request"
 // @Success      200 {object} response.SuccessResponse
 // @Failure      400 {object} response.ErrorResponse
@@ -539,7 +540,7 @@ func (h *AuthHandler) Updateuser(g *gin.Context) {
 			Error: response.Error{
 				Code:       response.ErrBadRequest,
 				StatusCode: http.StatusBadRequest,
-				Message:    "Invalid request payload in Handler Layer",
+				Message:    "Invalid request payload",
 				Details: []response.Details{{
 					Field:   "body",
 					Message: err.Error(),
@@ -547,7 +548,7 @@ func (h *AuthHandler) Updateuser(g *gin.Context) {
 			},
 		}
 
-		h.logger.Error("Invalid request payload in Handler Layer",
+		h.logger.Error("Invalid request payload",
 			zap.Error(err))
 
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
@@ -561,17 +562,17 @@ func (h *AuthHandler) Updateuser(g *gin.Context) {
 			Error: response.Error{
 				Code:       response.ErrValidation,
 				StatusCode: http.StatusBadRequest,
-				Message:    "invalid User ID",
+				Message:    "Invalid User ID",
 				Details: []response.Details{
 					{
 						Field:   "User ID",
-						Message: "User Id missing",
+						Message: "User Id Invalid/Missing",
 					},
 				},
 			},
 		}
 
-		h.logger.Error("User Id missing  in Handler Layer")
+		h.logger.Error("User Id Invalid/Missing ")
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}
@@ -579,6 +580,7 @@ func (h *AuthHandler) Updateuser(g *gin.Context) {
 
 	id, errorResponse := utils.StringToUUID(userIDStr)
 	if errorResponse != nil {
+		h.logger.Error("Failed to convert the string into UUID")
 		h.logger.Error("Failed to convert the string into UUID in Handler layer")
 		g.JSON(errorResponse.StatusCode, errorResponse)
 		return
@@ -625,17 +627,17 @@ func (h *AuthHandler) GetUser(g *gin.Context) {
 			Error: response.Error{
 				Code:       response.ErrValidation,
 				StatusCode: http.StatusBadRequest,
-				Message:    "invalid User ID",
+				Message:    "Invalid User ID",
 				Details: []response.Details{
 					{
 						Field:   "User ID",
-						Message: "User Id missing",
+						Message: "User Id Invalid/Missing",
 					},
 				},
 			},
 		}
 
-		h.logger.Error("User Id missing  in Handler Layer")
+		h.logger.Error("User Id Invalid/Missing ")
 		g.JSON(errorResponse.Error.StatusCode, errorResponse)
 		return
 	}

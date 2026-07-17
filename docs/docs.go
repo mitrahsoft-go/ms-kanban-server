@@ -183,6 +183,17 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Refresh access token",
+                "parameters": [
+                    {
+                        "description": "refresh token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshTokenRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -335,6 +346,11 @@ const docTemplate = `{
         },
         "/users/{id}": {
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates user profile.",
                 "consumes": [
                     "application/json"
@@ -347,13 +363,6 @@ const docTemplate = `{
                 ],
                 "summary": "Update user",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
                     {
                         "description": "Update User Request",
                         "name": "request",
@@ -428,6 +437,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.RefreshTokenRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.Role": {
             "type": "string",
             "enum": [
@@ -465,8 +488,7 @@ const docTemplate = `{
             "required": [
                 "email",
                 "full_name",
-                "password",
-                "username"
+                "password"
             ],
             "properties": {
                 "avatar_url": {
@@ -700,6 +722,14 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Enter your JWT token in the format: Bearer \u003cyour-token\u003e",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
