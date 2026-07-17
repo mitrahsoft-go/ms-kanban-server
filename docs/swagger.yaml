@@ -239,12 +239,6 @@ paths:
       - application/json
       description: Changes the password of the authenticated user.
       parameters:
-      - default: Bearer <your-login-token>
-        description: string
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: Change Password Request
         in: body
         name: request
@@ -278,13 +272,6 @@ paths:
   /auth/logout:
     post:
       description: Revokes the user's refresh token and logs the user out.
-      parameters:
-      - default: Bearer <your-login-token>
-        description: string
-        in: header
-        name: Authorization
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -308,12 +295,6 @@ paths:
   /auth/mine:
     get:
       description: Returns the profile of the authenticated user.
-      parameters:
-      - description: Bearer Token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -345,11 +326,6 @@ paths:
       - application/json
       description: Generates a new access token using the refresh token.
       parameters:
-      - description: Bearer Token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: refresh token
         in: body
         name: request
@@ -460,12 +436,6 @@ paths:
       - application/json
       description: Updates user profile.
       parameters:
-      - default: Bearer <your-login-token>
-        description: string
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: User ID
         in: path
         name: id
@@ -496,7 +466,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Update user
       tags:
       - Users
+securityDefinitions:
+  BearerAuth:
+    description: 'Enter your JWT token in the format: Bearer <your-token>'
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

@@ -42,14 +42,6 @@ const docTemplate = `{
                 "summary": "Change password",
                 "parameters": [
                     {
-                        "type": "string",
-                        "default": "Bearer \u003cyour-login-token\u003e",
-                        "description": "string",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
                         "description": "Change Password Request",
                         "name": "request",
                         "in": "body",
@@ -102,16 +94,6 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Logout user",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "Bearer \u003cyour-login-token\u003e",
-                        "description": "string",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -149,15 +131,6 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Get current user",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer Token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -211,13 +184,6 @@ const docTemplate = `{
                 ],
                 "summary": "Refresh access token",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer Token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "description": "refresh token",
                         "name": "request",
@@ -380,6 +346,11 @@ const docTemplate = `{
         },
         "/users/{id}": {
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates user profile.",
                 "consumes": [
                     "application/json"
@@ -392,14 +363,6 @@ const docTemplate = `{
                 ],
                 "summary": "Update user",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "default": "Bearer \u003cyour-login-token\u003e",
-                        "description": "string",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "User ID",
@@ -766,6 +729,14 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Enter your JWT token in the format: Bearer \u003cyour-token\u003e",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

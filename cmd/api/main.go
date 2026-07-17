@@ -28,6 +28,11 @@ import (
 
 // @host localhost:6369
 // @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Enter your JWT token in the format: Bearer <your-token>
 func main() {
 
 	// Load configuration, initialize database connection, set up routes, and start the server

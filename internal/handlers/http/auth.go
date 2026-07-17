@@ -226,7 +226,6 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param Authorization header string true "Bearer Token"
 // @Param        request body dto.RefreshTokenRequest true "refresh token"
 // @Success      200 {object} response.SuccessResponse{data=dto.AuthTokensResponse}
 // @Failure      401 {object} response.ErrorResponse
@@ -333,7 +332,6 @@ func (h *AuthHandler) RefreshToken(g *gin.Context) {
 // @Tags         Authentication
 // @Security     BearerAuth
 // @Produce      json
-// @Param Authorization header string true "string" default(Bearer <your-login-token>)
 // @Success      200 {object} response.SuccessResponse
 // @Failure      401 {object} response.ErrorResponse
 // @Failure      500 {object} response.ErrorResponse
@@ -390,7 +388,6 @@ func (h *AuthHandler) Logout(g *gin.Context) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param Authorization header string true "string" default(Bearer <your-login-token>)
 // @Param        request body dto.ChangePasswordRequest true "Change Password Request"
 // @Success      200 {object} response.SuccessResponse
 // @Failure      400 {object} response.ErrorResponse
@@ -478,7 +475,7 @@ func (h *AuthHandler) ChangePassword(g *gin.Context) {
 // @Tags         Users
 // @Accept       json
 // @Produce      json
-// @Param Authorization header string true "string" default(Bearer <your-login-token>)
+// @Security	 BearerAuth
 // @Param        id path string true "User ID"
 // @Param        request body dto.UpdateUserRequest true "Update User Request"
 // @Success      200 {object} response.SuccessResponse
@@ -566,7 +563,6 @@ func (h *AuthHandler) Updateuser(g *gin.Context) {
 // @Tags         Users
 // @Security     BearerAuth
 // @Produce      json
-// @Param  		 Authorization header string true "Bearer Token"
 // @Success      200 {object} response.SuccessResponse{data=models.User}
 // @Failure      401 {object} response.ErrorResponse
 // @Failure      500 {object} response.ErrorResponse
