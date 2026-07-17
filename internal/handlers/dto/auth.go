@@ -1,6 +1,10 @@
 package dto
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/gofrs/uuid"
+)
 
 type Role string
 
@@ -62,4 +66,10 @@ func (r Role) Validate() error {
 	default:
 		return fmt.Errorf("invalid role: %s", r)
 	}
+}
+
+type ChangePasswordRequest struct {
+	UserID      uuid.UUID `json:"user_id"`
+	OldPassword string    `json:"old_password"`
+	NewPassword string    `json:"new_password"`
 }

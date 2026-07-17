@@ -53,6 +53,13 @@ func (s *stubAuthRepository) GetRefreshToken(userID string) (models.RefreshToken
 	return s.refreshToken, nil
 }
 
+func (s *stubAuthRepository) ChangePassword(tokenHash string, userID uuid.UUID) *response.Error {
+	if s.err != nil {
+		return s.err
+	}
+	return nil
+}
+
 func (s *stubAuthRepository) RequestPasswordReset(email string) (models.User, *response.Error) {
 	if s.err != nil {
 		return models.User{}, s.err

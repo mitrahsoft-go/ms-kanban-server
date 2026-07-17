@@ -27,6 +27,7 @@ type Service interface {
 	RefreshToken(credentials dto.RefreshTokenRequest) (*dto.AuthTokensResponse, *response.Error)
 	SignUp(credentials dto.SignUpRequest) *response.Error
 	Logout(UserID string) *response.Error
+	ChangePassword(payload dto.ChangePasswordRequest) *response.Error
 	RequestPasswordReset(email string) *response.Error
 	ResetPassword(credentials dto.ResetPasswordRequest) *response.Error
 }
@@ -411,4 +412,53 @@ func (s *authservice) Logout(UserID string) *response.Error {
 	})
 
 	return nil
+}
+
+func (s *authservice) ChangePassword(payload dto.ChangePasswordRequest) *response.Error {
+
+	result, err := s.Repo.SignInByID(payload.UserID)
+	if err != nil {
+		s.logger.Warn("Login failed during user lookup",
+			zap.String("error", err.Message))
+		return err
+	}
+
+	if utils.IsValidPassword(result.PasswordHash, payload.OldPassword) {
+		s.logger.Warn("Login failed due to invalid credentials")
+		return &response.Error{
+			Code:       response.ErrUnauthorized,
+			StatusCode: http.StatusUnauthorized,
+			Message:    "password is incorrect",
+			Details: []response.Details{{
+				Field:   "Password",
+				Message: "The provided password is invalid",
+			}},
+		}
+	}
+
+	if utils.ValidatedPassword(payload.NewPassword) {
+		s.logger.Error("Validated failure in Password before login in service layer")
+		return &response.Error{
+			Code:       response.ErrBadRequest,
+			StatusCode: http.StatusBadRequest,
+			Message:    "BadRequest",
+			Details: []response.Details{
+				{
+					Field:   "Password",
+					Message: "Invalid password format",
+				},
+			},
+		}
+
+	}
+
+	passwordhash, errorResponse := utils.HashPassword(payload.NewPassword)
+	if errorResponse != nil {
+		s.logger.Error("Failed Hashing Password before login in service layer",
+			zap.String("Email", result.Email))
+		return errorResponse
+	}
+
+	return s.Repo.ChangePassword(passwordhash,payload.UserID)
+
 }
