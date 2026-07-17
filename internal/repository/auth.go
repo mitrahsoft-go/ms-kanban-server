@@ -18,6 +18,7 @@ type Repository interface {
 	SignUp(row models.User) *response.Error
 	StoreRefreshToken(token models.RefreshToken) *response.Error
 	GetRefreshToken(userID string) (models.RefreshToken, *response.Error)
+	ChangePassword(password string, userID uuid.UUID) *response.Error
 }
 
 func InitAuthRepository(db *gorm.DB, logger *zap.Logger) Repository {
@@ -198,4 +199,27 @@ func (d *authdatabase) GetRefreshToken(userID string) (models.RefreshToken, *res
 	}
 
 	return token, nil
+}
+
+func (d *authdatabase) ChangePassword(password string, userID uuid.UUID) *response.Error {
+
+	if err := d.DB.
+		Model(&models.User{}).
+		Where("id = ?", userID).
+		Update("password_hash", password).Error; err != nil {
+
+		d.logger.Error("Database error occurred while updating user password in Repository layer",
+			zap.Error(err))
+
+		return &response.Error{
+			Code:       response.ErrInternalServerError,
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to update password",
+			Details: []response.Details{{
+				Message: "Failed updating password: " + err.Error(),
+			}},
+		}
+	}
+
+	return nil
 }

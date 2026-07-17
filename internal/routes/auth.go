@@ -28,5 +28,6 @@ func AuthRoutes(deps models.Config, api *gin.RouterGroup) {
 		auth.POST("/refresh", middleware.ValidateJWT(), handler.RefreshToken)
 		auth.POST("/logout", middleware.ValidateJWT(), handler.Logout)
 		auth.POST("/signup", handler.SignUp)
+		auth.POST("/changepassword",middleware.ValidateJWT(), handler.ChangePassword)
 	}
 }
