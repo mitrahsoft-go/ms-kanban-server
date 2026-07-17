@@ -19,7 +19,7 @@ func IsValidPassword(storedHash, enteredPassword string) bool {
 	return false
 }
 
-func ValidatedPassword(password string) bool {
+func ValidatePassword(password string) bool {
 
 	emailRegex := regexp.MustCompile(`^[a-z0-9A-Z._%+\-]{8,}$`)
 	return emailRegex.MatchString(password)

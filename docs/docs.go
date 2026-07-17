@@ -42,6 +42,14 @@ const docTemplate = `{
                 "summary": "Change password",
                 "parameters": [
                     {
+                        "type": "string",
+                        "default": "Bearer \u003cyour-login-token\u003e",
+                        "description": "string",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "description": "Change Password Request",
                         "name": "request",
                         "in": "body",
@@ -94,6 +102,16 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Logout user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cyour-login-token\u003e",
+                        "description": "string",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -131,6 +149,15 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Get current user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -183,6 +210,24 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Refresh access token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "refresh token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshTokenRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -349,6 +394,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer \u003cyour-login-token\u003e",
+                        "description": "string",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "User ID",
                         "name": "id",
                         "in": "path",
@@ -428,6 +481,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.RefreshTokenRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.Role": {
             "type": "string",
             "enum": [
@@ -465,8 +532,7 @@ const docTemplate = `{
             "required": [
                 "email",
                 "full_name",
-                "password",
-                "username"
+                "password"
             ],
             "properties": {
                 "avatar_url": {

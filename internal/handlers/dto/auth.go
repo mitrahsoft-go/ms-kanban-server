@@ -38,7 +38,7 @@ type SignUpRequest struct {
 	Email          string  `json:"email" validate:"required,email"`
 	Password       string  `json:"password" validate:"required"`
 	FullName       string  `json:"full_name" validate:"required"`
-	UserName       string  `json:"username" validate:"required"`
+	UserName       string  `json:"username"`
 	OrganizationID string  `json:"organization_id,omitempty"`
 	Role           Role    `json:"role"`
 	AvatarURL      *string `json:"avatar_url"`
@@ -64,10 +64,9 @@ type ChangePasswordRequest struct {
 	NewPassword string    `json:"new_password"`
 }
 
-
 type UpdateUserRequest struct {
-	FullName       string  `json:"full_name"`
-	UserName       string  `json:"username"`
-	AvatarURL      *string `json:"avatar_url"`
-	Timezone       string  `json:"timezone"`
+	FullName  string  `json:"full_name"`
+	UserName  string  `json:"username"`
+	AvatarURL *string `json:"avatar_url"`
+	Timezone  string  `json:"timezone"`
 }
