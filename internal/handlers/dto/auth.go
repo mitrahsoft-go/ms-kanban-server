@@ -45,6 +45,16 @@ type SignUpRequest struct {
 	Timezone       string  `json:"timezone" gorm:"size:50;default:'UTC'"`
 }
 
+type PasswordResetRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type ResetPasswordRequest struct {
+	Email       string `json:"email" validate:"required,email"`
+	OTP         string `json:"otp" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required"`
+}
+
 func (r Role) Validate() error {
 	switch r {
 	case RoleSuperAdmin,

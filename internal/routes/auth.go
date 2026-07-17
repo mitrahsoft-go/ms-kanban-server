@@ -12,7 +12,7 @@ import (
 func AuthRoutes(deps models.Config, api *gin.RouterGroup) {
 
 	// initialize repositories
-	repo := repository.InitAuthRepository(deps.Database, deps.Logger)
+	repo := repository.InitAuthRepository(deps.Database, deps.Redis, deps.Logger)
 
 	// initialize services
 	service := services.InitAuthService(repo, deps.Logger)
@@ -29,5 +29,7 @@ func AuthRoutes(deps models.Config, api *gin.RouterGroup) {
 		auth.POST("/logout", middleware.ValidateJWT(), handler.Logout)
 		auth.POST("/signup", handler.SignUp)
 		auth.POST("/changepassword",middleware.ValidateJWT(), handler.ChangePassword)
+		auth.POST("/password-reset/request", handler.RequestPasswordReset)
+		auth.POST("/password-reset/confirm", handler.ResetPassword)
 	}
 }
