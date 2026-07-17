@@ -18,14 +18,14 @@ type stubAuthRepository struct {
 	err          *response.Error
 }
 
-func (s *stubAuthRepository) SignIn(email string) (models.User, *response.Error) {
+func (s *stubAuthRepository) GetByEmail(email string) (models.User, *response.Error) {
 	if s.err != nil {
 		return models.User{}, s.err
 	}
 	return s.user, nil
 }
 
-func (s *stubAuthRepository) SignInByID(id uuid.UUID) (models.User, *response.Error) {
+func (s *stubAuthRepository) GetByID(id uuid.UUID) (models.User, *response.Error) {
 	if s.err != nil {
 		return models.User{}, s.err
 	}

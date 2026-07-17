@@ -455,6 +455,7 @@ func (h *AuthHandler) Updateuser(g *gin.Context) {
 	id, errorResponse := utils.StringToUUID(userIDStr)
 	if errorResponse != nil {
 		h.logger.Error("Failed to convert the string into UUID in Handler layer")
+		g.JSON(errorResponse.StatusCode, errorResponse)
 		return
 	}
 
@@ -472,6 +473,7 @@ func (h *AuthHandler) Updateuser(g *gin.Context) {
 		Message:    "Updated profile successfully",
 		StatusCode: http.StatusOK,
 		Success:    true,
+		Data: id,
 	}
 	g.JSON(successResponse.StatusCode, successResponse)
 
@@ -505,6 +507,7 @@ func (h *AuthHandler) GetUser(g *gin.Context) {
 	id, errorResponse := utils.StringToUUID(userIDStr)
 	if errorResponse != nil {
 		h.logger.Error("Failed to convert the string into UUID in Handler layer")
+		g.JSON(errorResponse.StatusCode, errorResponse)
 		return
 	}
 

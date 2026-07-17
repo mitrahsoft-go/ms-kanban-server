@@ -14,8 +14,8 @@ import (
 )
 
 type Repository interface {
-	SignIn(email string) (models.User, *response.Error)
-	SignInByID(id uuid.UUID) (models.User, *response.Error)
+	GetByEmail(email string) (models.User, *response.Error)
+	GetByID(id uuid.UUID) (models.User, *response.Error)
 	SignUp(row models.User) *response.Error
 	StoreRefreshToken(token models.RefreshToken) *response.Error
 	GetRefreshToken(userID string) (models.RefreshToken, *response.Error)
@@ -35,7 +35,7 @@ type authdatabase struct {
 	logger *zap.Logger
 }
 
-func (d *authdatabase) SignIn(email string) (models.User, *response.Error) {
+func (d *authdatabase) GetByEmail(email string) (models.User, *response.Error) {
 
 	var row models.User
 
@@ -77,7 +77,7 @@ func (d *authdatabase) SignIn(email string) (models.User, *response.Error) {
 	return row, nil
 }
 
-func (d *authdatabase) SignInByID(id uuid.UUID) (models.User, *response.Error) {
+func (d *authdatabase) GetByID(id uuid.UUID) (models.User, *response.Error) {
 
 	var row models.User
 

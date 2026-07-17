@@ -28,8 +28,8 @@ func AuthRoutes(deps models.Config, api *gin.RouterGroup) {
 		auth.POST("/refresh", middleware.ValidateJWT(), handler.RefreshToken)
 		auth.POST("/logout", middleware.ValidateJWT(), handler.Logout)
 		auth.POST("/signup", handler.SignUp)
-		auth.POST("/changepassword", middleware.ValidateJWT(), handler.ChangePassword)
+		auth.POST("/change-password", middleware.ValidateJWT(), handler.ChangePassword)
 		auth.PATCH("/update", middleware.ValidateJWT(), handler.Updateuser)
-		auth.GET("/mine", middleware.ValidateJWT(), handler.GetUser)
+		auth.GET("/me", middleware.ValidateJWT(), handler.GetUser)
 	}
 }

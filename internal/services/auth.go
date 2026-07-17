@@ -43,7 +43,7 @@ type authservice struct {
 
 func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResponse, *response.Error) {
 
-	result, err := s.Repo.SignIn(credentials.Email)
+	result, err := s.Repo.GetByEmail(credentials.Email)
 	if err != nil {
 		s.logger.Warn("Login failed during user lookup",
 			zap.String("email", credentials.Email),
@@ -175,7 +175,7 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 		}
 	}
 
-	user, userErr := s.Repo.SignInByID(oldToken.UserID)
+	user, userErr := s.Repo.GetByID(oldToken.UserID)
 	if userErr != nil {
 		return nil, userErr
 	}
@@ -319,7 +319,7 @@ func (s *authservice) Logout(UserID string) *response.Error {
 
 func (s *authservice) ChangePassword(payload dto.ChangePasswordRequest) *response.Error {
 
-	result, err := s.Repo.SignInByID(payload.UserID)
+	result, err := s.Repo.GetByID(payload.UserID)
 	if err != nil {
 		s.logger.Warn("Login failed during user lookup",
 			zap.String("error", err.Message))
@@ -411,5 +411,5 @@ func (s *authservice) UpdateUser(payload dto.UpdateUserRequest, userID uuid.UUID
 
 func (s *authservice) GetUser(userID uuid.UUID) (models.User, *response.Error) {
 
-	return s.Repo.SignInByID(userID)
+	return s.Repo.GetByID(userID)
 }
