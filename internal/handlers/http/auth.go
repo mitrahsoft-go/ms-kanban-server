@@ -25,6 +25,19 @@ type AuthHandler struct {
 	logger  *zap.Logger
 }
 
+// SignUp godoc
+//
+// @Summary      Register a new user
+// @Description  Creates a new user account.
+// @Tags         Authentication
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.SignUpRequest true "Sign Up Request"
+// @Success      201 {object} response.SuccessResponse
+// @Failure      400 {object} response.ErrorResponse
+// @Failure      409 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /auth/signup [post]
 func (h *AuthHandler) SignUp(g *gin.Context) {
 
 	var payload dto.SignUpRequest
@@ -119,6 +132,19 @@ func (h *AuthHandler) SignUp(g *gin.Context) {
 
 }
 
+// SignIn godoc
+//
+// @Summary      Sign in user
+// @Description  Authenticates a user and returns access and refresh tokens.
+// @Tags         Authentication
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.SignInRequest true "Sign In Request"
+// @Success      200 {object} response.SuccessResponse{data=dto.AuthTokensResponse}
+// @Failure      400 {object} response.ErrorResponse
+// @Failure      401 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /auth/signin [post]
 func (h *AuthHandler) SignIn(g *gin.Context) {
 
 	var loginCredentials dto.SignInRequest
@@ -192,6 +218,18 @@ func (h *AuthHandler) SignIn(g *gin.Context) {
 	g.JSON(successResponse.StatusCode, successResponse)
 }
 
+// RefreshToken godoc
+//
+// @Summary      Refresh access token
+// @Description  Generates a new access token using the refresh token.
+// @Tags         Authentication
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Success      200 {object} response.SuccessResponse{data=dto.AuthTokensResponse}
+// @Failure      401 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /auth/refresh [post]
 func (h *AuthHandler) RefreshToken(g *gin.Context) {
 
 	var payload dto.RefreshTokenRequest
@@ -286,6 +324,17 @@ func (h *AuthHandler) RefreshToken(g *gin.Context) {
 	g.JSON(successResponse.StatusCode, successResponse)
 }
 
+// Logout godoc
+//
+// @Summary      Logout user
+// @Description  Revokes the user's refresh token and let user logout.
+// @Tags         Authentication
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200 {object} response.SuccessResponse
+// @Failure      401 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /auth/logout [post]
 func (h *AuthHandler) Logout(g *gin.Context) {
 
 	userID, exist := g.Get("user_id")
@@ -330,6 +379,20 @@ func (h *AuthHandler) Logout(g *gin.Context) {
 	g.JSON(successResponse.StatusCode, successResponse)
 }
 
+// ChangePassword godoc
+//
+// @Summary      Change password
+// @Description  Changes the password of the authenticated user.
+// @Tags         Authentication
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.ChangePasswordRequest true "Change Password Request"
+// @Success      200 {object} response.SuccessResponse
+// @Failure      400 {object} response.ErrorResponse
+// @Failure      401 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /auth/changepassword [post]
 func (h *AuthHandler) ChangePassword(g *gin.Context) {
 
 	var payload dto.ChangePasswordRequest
@@ -404,6 +467,20 @@ func (h *AuthHandler) ChangePassword(g *gin.Context) {
 
 }
 
+// UpdateUser godoc
+//
+// @Summary      Update user
+// @Description  Updates user profile.
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "User ID"
+// @Param        request body dto.UpdateUserRequest true "Update User Request"
+// @Success      200 {object} response.SuccessResponse
+// @Failure      400 {object} response.ErrorResponse
+// @Failure      404 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /users/{id} [patch]
 func (h *AuthHandler) Updateuser(g *gin.Context) {
 
 	var payload dto.UpdateUserRequest
@@ -477,6 +554,17 @@ func (h *AuthHandler) Updateuser(g *gin.Context) {
 
 }
 
+// GetUser godoc
+//
+// @Summary      Get current user
+// @Description  Returns the profile of the authenticated user.
+// @Tags         Users
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200 {object} response.SuccessResponse{data=models.User}
+// @Failure      401 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /auth/mine [get]
 func (h *AuthHandler) GetUser(g *gin.Context) {
 
 	userID, exist := g.Get("user_id")
