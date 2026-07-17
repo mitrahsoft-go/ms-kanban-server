@@ -26,13 +26,11 @@ func SendPasswordResetOTP(toEmail, otp string) error {
 
 	subject := "Password reset OTP"
 	gmailErr := sendViaGmailSMTP(toEmail, fromEmail, subject, renderedHTML)
-	if gmailErr == nil {
-		return nil
-	}
-
-	brevoErr := sendViaBrevo(toEmail, fromEmail, subject, renderedHTML)
-	if brevoErr != nil {
-		return fmt.Errorf("gmail smtp failed: %w; brevo fallback failed: %v", gmailErr, brevoErr)
+	if gmailErr != nil {
+		brevoErr := sendViaBrevo(toEmail, fromEmail, subject, renderedHTML)
+		if brevoErr != nil {
+			return fmt.Errorf("gmail smtp failed: %w; brevo fallback failed: %v", gmailErr, brevoErr)
+		}
 	}
 
 	return nil
