@@ -64,7 +64,7 @@ func (d *authdatabase) SignIn(email string) (models.User, *response.Error) {
 			Message:    "InternalServerError",
 			Details: []response.Details{
 				{
-					Message: "Failed to Login : " + err.Error(),
+					Message: "Failed to Login",
 				},
 			},
 		}
@@ -104,7 +104,7 @@ func (d *authdatabase) SignInByID(id uuid.UUID) (models.User, *response.Error) {
 			StatusCode: http.StatusInternalServerError,
 			Message:    "Failed to retrieve user",
 			Details: []response.Details{{
-				Message: "Failed querying user : " + err.Error(),
+				Message: "Failed querying user",
 			}},
 		}
 	}
@@ -120,7 +120,7 @@ func (d *authdatabase) SignUp(row models.User) *response.Error {
 			Message:    "Failed to Register",
 			Details: []response.Details{
 				{
-					Message: "Failed inserting the row : " + err.Error(),
+					Message: "Failed inserting the row",
 				},
 			},
 		}
@@ -155,7 +155,7 @@ func (d *authdatabase) StoreRefreshToken(token models.RefreshToken) *response.Er
 			StatusCode: http.StatusInternalServerError,
 			Message:    "Failed to store refresh token",
 			Details: []response.Details{{
-				Message: "Failed storing refresh token: " + err.Error(),
+				Message: "Failed storing refresh token",
 			}},
 		}
 
@@ -195,7 +195,7 @@ func (d *authdatabase) GetRefreshToken(userID string) (models.RefreshToken, *res
 			StatusCode: http.StatusInternalServerError,
 			Message:    "Failed to read refresh token",
 			Details: []response.Details{{
-				Message: "Failed querying refresh token : " + err.Error(),
+				Message: "Failed querying refresh token",
 			}},
 		}
 	}
@@ -218,7 +218,7 @@ func (d *authdatabase) ChangePassword(password string, userID uuid.UUID) *respon
 			StatusCode: http.StatusInternalServerError,
 			Message:    "Failed to update password",
 			Details: []response.Details{{
-				Message: "Failed updating password: " + err.Error(),
+				Message: "Failed updating password",
 			}},
 		}
 	}
