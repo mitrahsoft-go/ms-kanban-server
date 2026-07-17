@@ -328,7 +328,7 @@ func (h *AuthHandler) RefreshToken(g *gin.Context) {
 // Logout godoc
 //
 // @Summary      Logout user
-// @Description  Revokes the user's refresh token and logs the user out.
+// @Description  Revokes the user's refresh token and let user logout.
 // @Tags         Authentication
 // @Security     BearerAuth
 // @Produce      json
