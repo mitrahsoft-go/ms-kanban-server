@@ -11,12 +11,7 @@ import (
 )
 
 func IsValidPassword(storedHash, enteredPassword string) bool {
-
-	err := bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(enteredPassword))
-	if err != nil {
-		return true
-	}
-	return false
+	return bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(enteredPassword)) == nil
 }
 
 func ValidatedPassword(password string) bool {
