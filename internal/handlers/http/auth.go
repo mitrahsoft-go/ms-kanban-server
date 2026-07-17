@@ -550,7 +550,8 @@ func (h *AuthHandler) Updateuser(g *gin.Context) {
 		Message:    "Updated profile successfully",
 		StatusCode: http.StatusOK,
 		Success:    true,
-		Data: id,
+		Data: map[string]any{
+			"userID": id},
 	}
 	g.JSON(successResponse.StatusCode, successResponse)
 

@@ -32,7 +32,7 @@ func (s *stubAuthRepository) GetByID(id uuid.UUID) (models.User, *response.Error
 	return s.user, nil
 }
 
-func (s *stubAuthRepository) SignUp(row models.User) *response.Error {
+func (s *stubAuthRepository) CreateUser(row models.User) *response.Error {
 	return nil
 }
 

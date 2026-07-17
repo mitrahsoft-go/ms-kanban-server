@@ -16,7 +16,7 @@ import (
 type Repository interface {
 	GetByEmail(email string) (models.User, *response.Error)
 	GetByID(id uuid.UUID) (models.User, *response.Error)
-	SignUp(row models.User) *response.Error
+	CreateUser(row models.User) *response.Error
 	StoreRefreshToken(token models.RefreshToken) *response.Error
 	GetRefreshToken(userID string) (models.RefreshToken, *response.Error)
 	ChangePassword(password string, userID uuid.UUID) *response.Error
@@ -111,7 +111,7 @@ func (d *authdatabase) GetByID(id uuid.UUID) (models.User, *response.Error) {
 	return row, nil
 }
 
-func (d *authdatabase) SignUp(row models.User) *response.Error {
+func (d *authdatabase) CreateUser(row models.User) *response.Error {
 
 	if err := d.DB.Create(&row).Error; err != nil {
 		errorResponse := response.Error{

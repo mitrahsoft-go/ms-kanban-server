@@ -296,7 +296,7 @@ func (s *authservice) SignUp(credentials dto.SignUpRequest) *response.Error {
 		result.OrganizationID = &organizationID
 	}
 
-	return s.Repo.SignUp(result)
+	return s.Repo.CreateUser(result)
 
 }
 
