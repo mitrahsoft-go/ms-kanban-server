@@ -436,11 +436,6 @@ paths:
       - application/json
       description: Updates user profile.
       parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
       - description: Update User Request
         in: body
         name: request
