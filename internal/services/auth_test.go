@@ -1,6 +1,7 @@
 package services
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -13,26 +14,31 @@ import (
 )
 
 type stubAuthRepository struct {
-	user         models.User
-	refreshToken models.RefreshToken
-	err          *response.Error
+	user                 models.User
+	refreshToken         models.RefreshToken
+	otp                  models.PasswordResetOTP
+	err                  *response.Error
+	storedOTP            models.PasswordResetOTP
+	updatedPasswordHash  string
+	revokedRefreshTokens bool
+	storedOTPs           []models.PasswordResetOTP
 }
 
-func (s *stubAuthRepository) SignIn(email string) (models.User, *response.Error) {
+func (s *stubAuthRepository) GetByEmail(email string) (models.User, *response.Error) {
 	if s.err != nil {
 		return models.User{}, s.err
 	}
 	return s.user, nil
 }
 
-func (s *stubAuthRepository) SignInByID(id uuid.UUID) (models.User, *response.Error) {
+func (s *stubAuthRepository) GetByID(id uuid.UUID) (models.User, *response.Error) {
 	if s.err != nil {
 		return models.User{}, s.err
 	}
 	return s.user, nil
 }
 
-func (s *stubAuthRepository) SignUp(row models.User) *response.Error {
+func (s *stubAuthRepository) CreateUser(row models.User) *response.Error {
 	return nil
 }
 
@@ -40,7 +46,7 @@ func (s *stubAuthRepository) StoreRefreshToken(token models.RefreshToken) *respo
 	return nil
 }
 
-func (s *stubAuthRepository) GetRefreshToken(tokenHash string) (models.RefreshToken, *response.Error) {
+func (s *stubAuthRepository) GetRefreshToken(userID string) (models.RefreshToken, *response.Error) {
 	if s.err != nil {
 		return models.RefreshToken{}, s.err
 	}
@@ -57,6 +63,43 @@ func (s *stubAuthRepository) UpdateUser(userID uuid.UUID, req models.User) *resp
 	if s.err != nil {
 		return s.err
 	}
+	return nil
+}
+
+func (s *stubAuthRepository) RequestPasswordReset(email string) (models.User, *response.Error) {
+	if s.err != nil {
+		return models.User{}, s.err
+	}
+	return s.user, nil
+}
+
+func (s *stubAuthRepository) SavePasswordResetOTP(otp models.PasswordResetOTP) *response.Error {
+	s.storedOTP = otp
+	s.storedOTPs = append(s.storedOTPs, otp)
+	return nil
+}
+
+func (s *stubAuthRepository) InvalidatePasswordResetOTPs(userID uuid.UUID) *response.Error {
+	return nil
+}
+
+func (s *stubAuthRepository) GetPasswordResetOTP(userID uuid.UUID, otp string) (models.PasswordResetOTP, *response.Error) {
+	if s.err != nil {
+		return models.PasswordResetOTP{}, s.err
+	}
+	if !utils.IsValidPassword(s.otp.OTPHash, otp) {
+		return models.PasswordResetOTP{}, &response.Error{Code: response.ErrUnauthorized, StatusCode: http.StatusUnauthorized, Message: "Invalid OTP", Details: []response.Details{{Field: "otp", Message: "The provided OTP is invalid or expired"}}}
+	}
+	return s.otp, nil
+}
+
+func (s *stubAuthRepository) UpdateUserPassword(userID uuid.UUID, passwordHash string) *response.Error {
+	s.updatedPasswordHash = passwordHash
+	return nil
+}
+
+func (s *stubAuthRepository) RevokeRefreshTokens(userID uuid.UUID) *response.Error {
+	s.revokedRefreshTokens = true
 	return nil
 }
 
@@ -160,5 +203,32 @@ func TestRefreshTokenReturnsNewAccessTokenForValidRefreshToken(t *testing.T) {
 	}
 	if result.TokenType != "Bearer" {
 		t.Fatalf("expected Bearer token type, got %q", result.TokenType)
+	}
+}
+
+func TestResetPasswordUpdatesHashAndRevokesTokens(t *testing.T) {
+	hashedOTP, hashErr := utils.HashPassword("123456")
+	if hashErr != nil {
+		t.Fatalf("failed to hash otp: %v", hashErr)
+	}
+
+	repo := &stubAuthRepository{
+		user: models.User{ID: uuid.Must(uuid.NewV7()), Email: "user@example.com", IsActive: true},
+		otp:  models.PasswordResetOTP{UserID: uuid.Must(uuid.NewV7()), OTPHash: hashedOTP, ExpiresAt: time.Now().Add(15 * time.Minute)},
+	}
+	service := InitAuthService(repo, zap.NewNop()).(*authservice)
+
+	resetErr := service.ResetPassword(dto.ResetPasswordRequest{Email: "user@example.com", OTP: "123456", NewPassword: "NewPassword123!"})
+	if resetErr != nil {
+		t.Fatalf("expected password reset to succeed, got error: %v", resetErr)
+	}
+	if repo.updatedPasswordHash == "" {
+		t.Fatal("expected password hash to be updated")
+	}
+	if !repo.revokedRefreshTokens {
+		t.Fatal("expected refresh tokens to be revoked")
+	}
+	if repo.storedOTP.UsedAt == nil {
+		t.Fatal("expected otp to be marked as used")
 	}
 }

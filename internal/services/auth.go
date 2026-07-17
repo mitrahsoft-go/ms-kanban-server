@@ -4,7 +4,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -12,6 +14,7 @@ import (
 	"github.com/ms-kanban-server/config"
 	"github.com/ms-kanban-server/internal/handlers/dto"
 	"github.com/ms-kanban-server/internal/middleware"
+	mail "github.com/ms-kanban-server/internal/pkg/email"
 	"github.com/ms-kanban-server/internal/pkg/models"
 	"github.com/ms-kanban-server/internal/pkg/response"
 	"github.com/ms-kanban-server/internal/pkg/utils"
@@ -25,6 +28,8 @@ type Service interface {
 	SignUp(credentials dto.SignUpRequest) *response.Error
 	Logout(UserID string) *response.Error
 	ChangePassword(payload dto.ChangePasswordRequest) *response.Error
+	RequestPasswordReset(email string) *response.Error
+	ResetPassword(credentials dto.ResetPasswordRequest) *response.Error
 	UpdateUser(payload dto.UpdateUserRequest, userID uuid.UUID) *response.Error
 	GetUser(userID uuid.UUID) (models.User, *response.Error)
 }
@@ -43,7 +48,7 @@ type authservice struct {
 
 func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResponse, *response.Error) {
 
-	result, err := s.Repo.SignIn(credentials.Email)
+	result, err := s.Repo.GetByEmail(credentials.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +67,7 @@ func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResp
 		}
 	}
 
-	if utils.IsValidPassword(result.PasswordHash, credentials.Password) {
+	if !utils.IsValidPassword(result.PasswordHash, credentials.Password) {
 		s.logger.Error("Login failed incorrect password",
 			zap.String("email", credentials.Email))
 		return nil, &response.Error{
@@ -146,7 +151,7 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 		return nil, err
 	}
 
-	if utils.IsValidPassword(oldToken.TokenHash, credentials.RefreshToken) {
+	if !utils.IsValidPassword(oldToken.TokenHash, credentials.RefreshToken) {
 		s.logger.Error("Login failed incorrect password",
 			zap.String("UserID", credentials.UserID))
 		return nil, &response.Error{
@@ -174,7 +179,7 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 		}
 	}
 
-	user, userErr := s.Repo.SignInByID(oldToken.UserID)
+	user, userErr := s.Repo.GetByID(oldToken.UserID)
 	if userErr != nil {
 		return nil, userErr
 	}
@@ -210,6 +215,100 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 		ExpiresIn:        expiresIn,
 		RefreshExpiresIn: int(time.Until(oldToken.ExpiresAt).Seconds()),
 	}, nil
+}
+
+func (s *authservice) RequestPasswordReset(email string) *response.Error {
+	user, err := s.Repo.RequestPasswordReset(email)
+	if err != nil {
+		return err
+	}
+	if user.ID == uuid.Nil {
+		s.logger.Warn("Password reset requested for unknown email", zap.String("email", email))
+		return &response.Error{Code: response.ErrUnauthorized, StatusCode: http.StatusUnauthorized, Message: "Invalid OTP", Details: []response.Details{{Field: "email", Message: "The provided email does not match a known account"}}}
+	}
+
+	otpValue := generateOTP(6)
+	otpExpiryMinutes, parseErr := strconv.Atoi(config.GetEnv("OTP_EXPIRY_MINUTES", "15"))
+	if parseErr != nil || otpExpiryMinutes <= 0 {
+		otpExpiryMinutes = 15
+	}
+	expiresAt := time.Now().Add(time.Duration(otpExpiryMinutes) * time.Minute)
+	hashedOTP, hashErr := utils.HashPassword(otpValue)
+	if hashErr != nil {
+		return &response.Error{Code: response.ErrInternalServerError, StatusCode: http.StatusInternalServerError, Message: "Failed to secure OTP", Details: []response.Details{{Field: "otp", Message: hashErr.Message}}}
+	}
+
+	otpRecord := models.PasswordResetOTP{
+		UserID:    user.ID,
+		OTPHash:   hashedOTP,
+		ExpiresAt: expiresAt,
+	}
+	if invalidateErr := s.Repo.InvalidatePasswordResetOTPs(user.ID); invalidateErr != nil {
+		return invalidateErr
+	}
+	if saveErr := s.Repo.SavePasswordResetOTP(otpRecord); saveErr != nil {
+		return saveErr
+	}
+
+	if err := mail.SendPasswordResetOTP(user.Email, otpValue); err != nil {
+		s.logger.Error("Failed to send password reset OTP", zap.String("email", user.Email), zap.Error(err))
+		return &response.Error{Code: response.ErrInternalServerError, StatusCode: http.StatusInternalServerError, Message: "Failed to send password reset OTP", Details: []response.Details{{Field: "email", Message: err.Error()}}}
+	}
+
+	s.logger.Info("Password reset OTP generated", zap.String("email", user.Email))
+	return nil
+}
+
+func generateOTP(length int) string {
+	chars := "0123456789"
+	result := make([]byte, length)
+	for i := 0; i < length; i++ {
+		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))
+		result[i] = chars[n.Int64()]
+	}
+	return string(result)
+}
+
+func (s *authservice) ResetPassword(credentials dto.ResetPasswordRequest) *response.Error {
+	if utils.ValidatePassword(credentials.NewPassword) {
+		return &response.Error{Code: response.ErrBadRequest, StatusCode: http.StatusBadRequest, Message: "BadRequest", Details: []response.Details{{Field: "new_password", Message: "Password must meet the minimum complexity requirements"}}}
+	}
+
+	user, err := s.Repo.RequestPasswordReset(credentials.Email)
+	if err != nil {
+		return err
+	}
+	if user.ID == uuid.Nil {
+		return &response.Error{Code: response.ErrUnauthorized, StatusCode: http.StatusUnauthorized, Message: "Invalid OTP", Details: []response.Details{{Field: "email", Message: "The provided email does not match a known account"}}}
+	}
+
+	otpRecord, otpErr := s.Repo.GetPasswordResetOTP(user.ID, credentials.OTP)
+	if otpErr != nil {
+		return otpErr
+	}
+	if otpRecord.ExpiresAt.Before(time.Now()) || otpRecord.UsedAt != nil || !utils.IsValidPassword(otpRecord.OTPHash, credentials.OTP) {
+		return &response.Error{Code: response.ErrUnauthorized, StatusCode: http.StatusUnauthorized, Message: "Invalid OTP", Details: []response.Details{{Field: "otp", Message: "The provided OTP is invalid or expired"}}}
+	}
+
+	passwordHash, hashErr := utils.HashPassword(credentials.NewPassword)
+	if hashErr != nil {
+		return hashErr
+	}
+	if updateErr := s.Repo.UpdateUserPassword(user.ID, passwordHash); updateErr != nil {
+		return updateErr
+	}
+	if revokeErr := s.Repo.RevokeRefreshTokens(user.ID); revokeErr != nil {
+		return revokeErr
+	}
+
+	usedAt := time.Now()
+	otpRecord.UsedAt = &usedAt
+	if saveErr := s.Repo.SavePasswordResetOTP(otpRecord); saveErr != nil {
+		return saveErr
+	}
+
+	s.logger.Info("Password reset completed", zap.String("email", credentials.Email))
+	return nil
 }
 
 func (s *authservice) SignUp(credentials dto.SignUpRequest) *response.Error {
@@ -295,7 +394,7 @@ func (s *authservice) SignUp(credentials dto.SignUpRequest) *response.Error {
 		result.OrganizationID = &organizationID
 	}
 
-	return s.Repo.SignUp(result)
+	return s.Repo.CreateUser(result)
 
 }
 
@@ -318,7 +417,7 @@ func (s *authservice) Logout(UserID string) *response.Error {
 
 func (s *authservice) ChangePassword(payload dto.ChangePasswordRequest) *response.Error {
 
-	result, err := s.Repo.SignInByID(payload.UserID)
+	result, err := s.Repo.GetByID(payload.UserID)
 	if err != nil {
 		return err
 	}
@@ -408,5 +507,5 @@ func (s *authservice) UpdateUser(payload dto.UpdateUserRequest, userID uuid.UUID
 
 func (s *authservice) GetUser(userID uuid.UUID) (models.User, *response.Error) {
 
-	return s.Repo.SignInByID(userID)
+	return s.Repo.GetByID(userID)
 }
