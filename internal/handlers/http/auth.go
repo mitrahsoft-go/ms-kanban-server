@@ -476,7 +476,6 @@ func (h *AuthHandler) ChangePassword(g *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security	 BearerAuth
-// @Param        id path string true "User ID"
 // @Param        request body dto.UpdateUserRequest true "Update User Request"
 // @Success      200 {object} response.SuccessResponse
 // @Failure      400 {object} response.ErrorResponse
