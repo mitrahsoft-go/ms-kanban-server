@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type Repository interface {
+type AuthRepository interface {
 	GetByEmail(email string) (models.User, *response.Error)
 	GetByID(id uuid.UUID) (models.User, *response.Error)
 	CreateUser(row models.User) *response.Error
@@ -33,11 +33,11 @@ type Repository interface {
 	UpdateUser(userID uuid.UUID, req models.User) *response.Error
 }
 
-func InitAuthRepository(db *gorm.DB, redisClient *redisclient.Client, logger *zap.Logger) Repository {
+func InitAuthRepository(deps models.Config) AuthRepository {
 	return &authdatabase{
-		DB:          db,
-		redisClient: redisClient,
-		logger:      logger,
+		DB:          deps.Database,
+		redisClient: deps.Redis,
+		logger:      deps.Logger,
 	}
 }
 

@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Service interface {
+type AuthService interface {
 	SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResponse, *response.Error)
 	RefreshToken(credentials dto.RefreshTokenRequest) (*dto.AuthTokensResponse, *response.Error)
 	SignUp(credentials dto.SignUpRequest) *response.Error
@@ -34,7 +34,7 @@ type Service interface {
 	GetUser(userID uuid.UUID) (models.User, *response.Error)
 }
 
-func InitAuthService(repo repository.Repository, logger *zap.Logger) Service {
+func InitAuthService(repo repository.AuthRepository, logger *zap.Logger) AuthService {
 	return &authservice{
 		Repo:   repo,
 		logger: logger,
@@ -42,7 +42,7 @@ func InitAuthService(repo repository.Repository, logger *zap.Logger) Service {
 }
 
 type authservice struct {
-	Repo   repository.Repository
+	Repo   repository.AuthRepository
 	logger *zap.Logger
 }
 
@@ -81,7 +81,13 @@ func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResp
 		}
 	}
 
-	accessToken, tokenErr := middleware.GenerateJWT(result.Role, result.ID, s.logger)
+	tokencredentials := dto.JWtcredentials{
+		Role:           result.Role,
+		UserId:         result.ID,
+		OrganizationID: *result.OrganizationID,
+	}
+
+	accessToken, tokenErr := middleware.GenerateJWT(tokencredentials, s.logger)
 	if tokenErr != nil {
 		return nil, tokenErr
 	}
@@ -194,8 +200,12 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 			}},
 		}
 	}
-
-	accessToken, tokenErr := middleware.GenerateJWT(user.Role, user.ID, s.logger)
+	tokencredentials := dto.JWtcredentials{
+		Role:           user.Role,
+		UserId:         user.ID,
+		OrganizationID: *user.OrganizationID,
+	}
+	accessToken, tokenErr := middleware.GenerateJWT(tokencredentials, s.logger)
 	if tokenErr != nil {
 		return nil, tokenErr
 	}
@@ -355,28 +365,10 @@ func (s *authservice) SignUp(credentials dto.SignUpRequest) *response.Error {
 		return errorResponse
 	}
 
-	role := dto.Role(credentials.Role)
-
-	if err := role.Validate(); err != nil {
-		s.logger.Error(" Invalid role",
-			zap.String("Role", string(credentials.Role)), zap.Error(err))
-		return &response.Error{
-			Code:       response.ErrBadRequest,
-			StatusCode: http.StatusBadRequest,
-			Message:    "BadRequest",
-			Details: []response.Details{
-				{
-					Field:   "Role",
-					Message: "Invalid role",
-				},
-			},
-		}
-	}
-
 	result := models.User{
 		Email:        credentials.Email,
 		PasswordHash: passwordhash,
-		Role:         string(credentials.Role),
+		Role:         string(dto.RoleGuest),
 		FullName:     credentials.FullName,
 		UserName:     credentials.UserName,
 		AvatarURL:    credentials.AvatarURL,

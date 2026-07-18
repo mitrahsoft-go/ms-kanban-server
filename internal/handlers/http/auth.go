@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func InitAuthHandler(service services.Service, logger *zap.Logger) *AuthHandler {
+func InitAuthHandler(service services.AuthService, logger *zap.Logger) *AuthHandler {
 	return &AuthHandler{
 		service: service,
 		logger:  logger,
@@ -21,7 +21,7 @@ func InitAuthHandler(service services.Service, logger *zap.Logger) *AuthHandler 
 }
 
 type AuthHandler struct {
-	service services.Service
+	service services.AuthService
 	logger  *zap.Logger
 }
 

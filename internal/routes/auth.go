@@ -12,7 +12,7 @@ import (
 func AuthRoutes(deps models.Config, api *gin.RouterGroup) {
 
 	// initialize repositories
-	repo := repository.InitAuthRepository(deps.Database, deps.Redis, deps.Logger)
+	repo := repository.InitAuthRepository(deps)
 
 	// initialize services
 	service := services.InitAuthService(repo, deps.Logger)

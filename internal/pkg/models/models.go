@@ -20,6 +20,7 @@ const (
 type Organization struct {
 	ID        uuid.UUID      `json:"id" gorm:"primaryKey;type:uuid"`
 	Name      string         `json:"name" gorm:"size:50;not null;unique;index:idx_organization_name"`
+	IsActive  bool           `json:"is_active" gorm:"default:true"`
 	Domain    *string        `json:"domain" validate:"required" gorm:"size:150;not null;unique"`
 	LogoURL   *string        `json:"logo_url" validate:"required" gorm:"size:150;not null"`
 	CreatedAt time.Time      `json:"created_at" gorm:"not null;type:timestamptz"`

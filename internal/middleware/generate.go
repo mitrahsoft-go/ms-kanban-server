@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gofrs/uuid"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/ms-kanban-server/config"
 	"github.com/ms-kanban-server/internal/handlers/dto"
@@ -14,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func GenerateJWT(role string, id uuid.UUID, logger *zap.Logger) (string, *response.Error) {
+func GenerateJWT(tokencredentials dto.JWtcredentials, logger *zap.Logger) (string, *response.Error) {
 
 	expiresIn, err := utils.StringToInt(config.GetEnv("JWT_EXPIRY", "900"))
 	if err != nil {
@@ -24,10 +23,10 @@ func GenerateJWT(role string, id uuid.UUID, logger *zap.Logger) (string, *respon
 		return "", err
 	}
 
-	return generateJWT(role, id, time.Duration(expiresIn)*time.Second, logger)
+	return generateJWT(tokencredentials, time.Duration(expiresIn)*time.Second, logger)
 }
 
-func generateJWT(role string, id uuid.UUID, ttl time.Duration, logger *zap.Logger) (string, *response.Error) {
+func generateJWT(tokencredentials dto.JWtcredentials, ttl time.Duration, logger *zap.Logger) (string, *response.Error) {
 	var jwtKey = config.GetEnv("JWT_SECRET_KEY", "")
 
 	expirationTime := time.Now().Add(ttl)
@@ -37,8 +36,9 @@ func generateJWT(role string, id uuid.UUID, ttl time.Duration, logger *zap.Logge
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
-		Role:   role,
-		UserId: id,
+		Role:           tokencredentials.Role,
+		UserId:         tokencredentials.UserId,
+		OrganizationID: tokencredentials.OrganizationID,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

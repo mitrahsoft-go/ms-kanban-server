@@ -14,6 +14,7 @@ const (
 	RoleProjectManager Role = "project_manager"
 	RoleDeveloper      Role = "developer"
 	RoleViewer         Role = "viewer"
+	RoleGuest          Role = "guest"
 )
 
 type AuthTokensResponse struct {
@@ -40,7 +41,6 @@ type SignUpRequest struct {
 	FullName       string  `json:"full_name" validate:"required"`
 	UserName       string  `json:"username" validate:"required"`
 	OrganizationID string  `json:"organization_id,omitempty"`
-	Role           Role    `json:"role"`
 	AvatarURL      *string `json:"avatar_url"`
 	Timezone       string  `json:"timezone"`
 }

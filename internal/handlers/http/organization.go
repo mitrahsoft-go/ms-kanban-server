@@ -1,0 +1,340 @@
+package handlers
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"github.com/ms-kanban-server/internal/handlers/dto"
+	"github.com/ms-kanban-server/internal/pkg/models"
+	"github.com/ms-kanban-server/internal/pkg/response"
+	"github.com/ms-kanban-server/internal/pkg/utils"
+	"github.com/ms-kanban-server/internal/services"
+	"go.uber.org/zap"
+)
+
+func InitOrganizationHandler(service services.OrganizationService, logger *zap.Logger) *OrganizationHandler {
+	return &OrganizationHandler{
+		service: service,
+		logger:  logger,
+	}
+}
+
+type OrganizationHandler struct {
+	service services.OrganizationService
+	logger  *zap.Logger
+}
+
+// deleteOrganization godoc
+//
+// @Summary      delete current Organization
+// @Description  Returns the profile of the authenticated Organization.
+// @Tags         Organizations
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200 {object} response.SuccessResponse{data=models.Organization}
+// @Failure      401 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /auth/delete [delete]
+func (h *OrganizationHandler) DeleteOrganization(g *gin.Context) {
+
+	OrganizationID, exist := g.Get("Organization_id")
+	if !exist {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid Organization ID",
+				Details: []response.Details{
+					{
+						Field:   "Organization ID",
+						Message: "Organization Id Invalid/Missing",
+					},
+				},
+			},
+		}
+
+		h.logger.Error("Organization Id Invalid/Missing ")
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+	OrganizationIDStr := OrganizationID.(string)
+
+	id, errorResponse := utils.StringToUUID(OrganizationIDStr)
+	if errorResponse != nil {
+		h.logger.Error("Failed to convert the string into UUID in Handler layer")
+		g.JSON(errorResponse.StatusCode, errorResponse)
+		return
+	}
+
+	err := h.service.DeleteOrganization(id)
+	if err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
+		return
+	}
+
+	successResponse := &response.SuccessResponse{
+		Message:    "Organization deleted successfully",
+		StatusCode: http.StatusOK,
+		Success:    true,
+	}
+	g.JSON(successResponse.StatusCode, successResponse)
+
+}
+
+// UpdateOrganization godoc
+//
+// @Summary      Update Organization
+// @Description  Updates Organization profile.
+// @Tags         Organizations
+// @Accept       json
+// @Produce      json
+// @Security	 BearerAuth
+// @Param        request body dto.UpdateOrganizationRequest true "Update Organization Request"
+// @Success      200 {object} response.SuccessResponse
+// @Failure      400 {object} response.ErrorResponse
+// @Failure      404 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /Organizations/{id} [patch]
+func (h *OrganizationHandler) UpdateOrganization(g *gin.Context) {
+
+	var payload dto.UpdateOrganizationRequest
+
+	if err := g.ShouldBindJSON(&payload); err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrBadRequest,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid request payload",
+				Details: []response.Details{{
+					Field:   "body",
+					Message: err.Error(),
+				}},
+			},
+		}
+
+		h.logger.Error("Invalid request payload",
+			zap.Error(err))
+
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+
+	OrganizationID, exist := g.Get("Organization_id")
+	if !exist {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid Organization ID",
+				Details: []response.Details{
+					{
+						Field:   "Organization ID",
+						Message: "Organization Id Invalid/Missing",
+					},
+				},
+			},
+		}
+
+		h.logger.Error("Organization Id Invalid/Missing ")
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+	OrganizationIDStr := OrganizationID.(string)
+
+	id, errorResponse := utils.StringToUUID(OrganizationIDStr)
+	if errorResponse != nil {
+		h.logger.Error("Failed to convert the string into UUID")
+		h.logger.Error("Failed to convert the string into UUID in Handler layer")
+		g.JSON(errorResponse.StatusCode, errorResponse)
+		return
+	}
+
+	credentials := models.Organization{
+		Name:    payload.Name,
+		Domain:  &payload.Domain,
+		LogoURL: &payload.LogoURL,
+	}
+	err := h.service.UpdateOrganization(id, credentials)
+	if err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
+		return
+	}
+
+	successResponse := &response.SuccessResponse{
+		Message:    "Updated Organization successfully",
+		StatusCode: http.StatusOK,
+		Success:    true,
+		Data: map[string]any{
+			"OrganizationID": id},
+	}
+	g.JSON(successResponse.StatusCode, successResponse)
+
+}
+
+// GetOrganization godoc
+//
+// @Summary      Get current Organization
+// @Description  Returns the profile of the authenticated Organization.
+// @Tags         Organizations
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200 {object} response.SuccessResponse{data=models.Organization}
+// @Failure      401 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /auth/mine [get]
+func (h *OrganizationHandler) GetOrganizationByID(g *gin.Context) {
+
+	OrganizationID, exist := g.Get("Organization_id")
+	if !exist {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid Organization ID",
+				Details: []response.Details{
+					{
+						Field:   "Organization ID",
+						Message: "Organization Id Invalid/Missing",
+					},
+				},
+			},
+		}
+
+		h.logger.Error("Organization Id Invalid/Missing ")
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+	OrganizationIDStr := OrganizationID.(string)
+
+	id, errorResponse := utils.StringToUUID(OrganizationIDStr)
+	if errorResponse != nil {
+		h.logger.Error("Failed to convert the string into UUID in Handler layer")
+		g.JSON(errorResponse.StatusCode, errorResponse)
+		return
+	}
+
+	result, err := h.service.GetOrganizationByID(id)
+	if err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
+		return
+	}
+
+	successResponse := &response.SuccessResponse{
+		Message:    "Organization detail received successfully",
+		StatusCode: http.StatusOK,
+		Success:    true,
+		Data:       result,
+	}
+	g.JSON(successResponse.StatusCode, successResponse)
+
+}
+
+// CreateOrganization godoc
+//
+// @Summary      Register a new Organization
+// @Description  Creates a new Organization account.
+// @Tags         Organizations
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.CreateOrganizationRequest true "Creates new Organization"
+// @Success      201 {object} response.SuccessResponse
+// @Failure      400 {object} response.ErrorResponse
+// @Failure      409 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /auth/Create [post]
+func (h *OrganizationHandler) CreateOrganization(g *gin.Context) {
+
+	var payload dto.CreateOrganizationRequest
+
+	if err := g.Bind(&payload); err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrBadRequest,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid request payload",
+				Details: []response.Details{
+					{
+						Field:   "body",
+						Message: err.Error()},
+				},
+			},
+		}
+
+		h.logger.Error("Invalid request payload",
+			zap.Error(err))
+
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(payload); err != nil {
+		var details []response.Details
+		for _, fieldErr := range err.(validator.ValidationErrors) {
+			details = append(details, response.Details{
+				Field:   fieldErr.Field(),
+				Message: fmt.Sprintf("Validation Failed on '%s'", fieldErr.Tag()),
+			})
+		}
+
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Validation failed",
+				Details:    details,
+			},
+		}
+
+		h.logger.Error("Validation failed",
+			zap.Error(err))
+
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+
+	credentials := models.Organization{
+		Name:    payload.Name,
+		Domain:  payload.Domain,
+		LogoURL: payload.LogoURL,
+	}
+
+	err := h.service.CreateOrganization(credentials)
+	if err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
+		return
+	}
+
+	successResponse := &response.SuccessResponse{
+		Message:    "Successfully Created",
+		StatusCode: http.StatusCreated,
+		Success:    true,
+	}
+
+	g.JSON(successResponse.StatusCode, successResponse)
+
+}
