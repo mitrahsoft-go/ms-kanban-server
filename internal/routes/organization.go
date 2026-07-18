@@ -22,11 +22,11 @@ func OrganizationRoutes(deps models.Config, api *gin.RouterGroup) {
 
 	middleware := middleware.InitMiddleware(deps.Logger)
 
-	auth := api.Group("/organization")
+	org := api.Group("/organization")
 	{
-		auth.DELETE("/delete", middleware.ValidateJWT(), handler.DeleteOrganization)
-		auth.POST("/create", handler.CreateOrganization)
-		auth.PATCH("/update", middleware.ValidateJWT(), handler.UpdateOrganization)
-		auth.GET("/get", middleware.ValidateJWT(), handler.GetOrganizationByID)
+		org.DELETE("/delete", middleware.ValidateJWT(), handler.DeleteOrganization)
+		org.POST("/create", handler.CreateOrganization)
+		org.PATCH("/update", middleware.ValidateJWT(), middleware.Authorize("org_admin"), handler.UpdateOrganization)
+		org.GET("/get", middleware.ValidateJWT(), handler.GetOrganizationByID)
 	}
 }
