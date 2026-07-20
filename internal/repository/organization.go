@@ -19,6 +19,7 @@ type OrganizationRepository interface {
 	GetByID(id uuid.UUID) (models.Organization, *response.Error)
 	UpdateOrganization(OrganizationID uuid.UUID, req models.Organization) *response.Error
 	DeleteOrganization(id uuid.UUID) *response.Error
+	UpdateUserStatus(userID uuid.UUID, req models.User) *response.Error
 }
 
 func InitOrganizationRepository(deps models.Config) OrganizationRepository {
@@ -198,6 +199,47 @@ func (d *Organizationdatabase) DeleteOrganization(id uuid.UUID) *response.Error 
 			Details: []response.Details{{
 				Field:   "Organization",
 				Message: "The Organization could not be found for deletion",
+			}},
+		}
+	}
+
+	return nil
+}
+
+func (d *Organizationdatabase) UpdateUserStatus(userID uuid.UUID, req models.User) *response.Error {
+
+	result := d.DB.
+		Model(&models.User{}).
+		Where("id = ?", userID).
+		Save(req)
+
+	if result.Error != nil {
+
+		d.logger.Error("Database error occurred while updating user",
+			zap.Error(result.Error))
+
+		return &response.Error{
+			Code:       response.ErrInternalServerError,
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to update user",
+			Details: []response.Details{{
+				Message: "Failed updating user",
+			}},
+		}
+	}
+
+	if result.RowsAffected == 0 {
+
+		d.logger.Error("User not found while updating user",
+			zap.String("user_id", fmt.Sprint(userID)))
+
+		return &response.Error{
+			Code:       response.ErrUnauthorized,
+			StatusCode: http.StatusUnauthorized,
+			Message:    "User not found",
+			Details: []response.Details{{
+				Field:   "user_id",
+				Message: "The specified user does not exist",
 			}},
 		}
 	}

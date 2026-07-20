@@ -518,3 +518,5 @@ func (s *authservice) GetUser(userID uuid.UUID) (models.User, *response.Error) {
 
 	return s.Repo.GetByID(userID)
 }
+
+

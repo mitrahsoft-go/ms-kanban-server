@@ -369,3 +369,106 @@ func (h *OrganizationHandler) CreateOrganization(g *gin.Context) {
 	g.JSON(successResponse.StatusCode, successResponse)
 
 }
+
+// UpdateUserStatus godoc
+//
+// @Summary      Update User Status
+// @Description  Updates User profile.
+// @Tags         Organizations
+// @Accept       json
+// @Produce      json
+// @Security	 BearerAuth
+// @Param        request body dto.UserStatusRequest true "Update User Status Request"
+// @Success      200 {object} response.SuccessResponse
+// @Failure      400 {object} response.ErrorResponse
+// @Failure      404 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /user-status/ [patch]
+func (h *OrganizationHandler) UpdateUserStatus(g *gin.Context) {
+
+	var payload dto.UserStatusRequest
+
+	if err := g.ShouldBindJSON(&payload); err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrBadRequest,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid request payload",
+				Details: []response.Details{{
+					Field:   "body",
+					Message: err.Error(),
+				}},
+			},
+		}
+
+		h.logger.Error("Invalid request payload",
+			zap.Error(err))
+
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+
+	OrganizationID, exist := g.Get("Organization_id")
+	if !exist {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid Organization ID",
+				Details: []response.Details{
+					{
+						Field:   "Organization ID",
+						Message: "Organization Id Invalid/Missing",
+					},
+				},
+			},
+		}
+
+		h.logger.Error("Organization Id Invalid/Missing ")
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+	OrganizationIDStr := OrganizationID.(string)
+
+	id, errorResponse := utils.StringToUUID(OrganizationIDStr)
+	if errorResponse != nil {
+		h.logger.Error("Failed to convert the string into UUID")
+		g.JSON(errorResponse.StatusCode, errorResponse)
+		return
+	}
+
+	userID, errorResponse := utils.StringToUUID(payload.UserID)
+	if errorResponse != nil {
+		h.logger.Error("Failed to convert the string into UUID")
+		g.JSON(errorResponse.StatusCode, errorResponse)
+		return
+	}
+
+	credentials := dto.UpdateUserStatus{
+		OrganizationID: id,
+		UserID:         userID,
+		IsActive:       payload.IsActive,
+	}
+	err := h.service.UpdateUserStatus(credentials)
+	if err != nil {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error:   *err,
+		}
+		g.JSON(err.StatusCode, errorResponse)
+		return
+	}
+
+	successResponse := &response.SuccessResponse{
+		Message:    "Updated User Status successfully",
+		StatusCode: http.StatusOK,
+		Success:    true,
+		Data: map[string]any{
+			"OrganizationID": id,
+			"user_id":        payload.UserID},
+	}
+	g.JSON(successResponse.StatusCode, successResponse)
+
+}
