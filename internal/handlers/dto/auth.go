@@ -81,3 +81,4 @@ type UpdateUserRequest struct {
 	AvatarURL string `json:"avatar_url"`
 	Timezone  string `json:"timezone"`
 }
+
