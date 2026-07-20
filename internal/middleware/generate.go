@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/ms-kanban-server/config"
 	"github.com/ms-kanban-server/internal/handlers/dto"
@@ -31,6 +32,14 @@ func generateJWT(tokencredentials dto.JWtcredentials, ttl time.Duration, logger 
 
 	expirationTime := time.Now().Add(ttl)
 
+	var organizationID uuid.UUID
+
+	if tokencredentials.OrganizationID == nil || *tokencredentials.OrganizationID == uuid.Nil {
+		organizationID = uuid.Nil
+	} else {
+		organizationID = *tokencredentials.OrganizationID
+	}
+
 	claims := &dto.ClaimsJWT{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
@@ -38,8 +47,10 @@ func generateJWT(tokencredentials dto.JWtcredentials, ttl time.Duration, logger 
 		},
 		Role:           tokencredentials.Role,
 		UserId:         tokencredentials.UserId,
-		OrganizationID: tokencredentials.OrganizationID,
+		OrganizationID: organizationID,
 	}
+
+	fmt.Printf("claims cred : %v", claims)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 

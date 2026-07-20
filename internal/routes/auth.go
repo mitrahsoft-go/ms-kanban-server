@@ -12,26 +12,26 @@ import (
 func AuthRoutes(deps models.Config, api *gin.RouterGroup) {
 
 	// initialize repositories
-	repo := repository.InitAuthRepository(deps)
+	AuthRepo := repository.InitAuthRepository(deps)
 
 	// initialize services
-	service := services.InitAuthService(repo, deps.Logger)
+	AuthService := services.InitAuthService(AuthRepo, deps.Logger)
 
 	// initialize handlers
-	handler := handlers.InitAuthHandler(service, deps.Logger)
+	AuthHandler := handlers.InitAuthHandler(AuthService, deps.Logger)
 
 	middleware := middleware.InitMiddleware(deps.Logger)
 
 	auth := api.Group("/auth")
 	{
-		auth.POST("/signin", handler.SignIn)
-		auth.POST("/refresh", middleware.ValidateJWT(), handler.RefreshToken)
-		auth.POST("/logout", middleware.ValidateJWT(), handler.Logout)
-		auth.POST("/signup", handler.SignUp)
-		auth.POST("/change-password", middleware.ValidateJWT(), handler.ChangePassword)
-		auth.POST("/password-reset/request", handler.RequestPasswordReset)
-		auth.POST("/password-reset/confirm", handler.ResetPassword)
-		auth.PATCH("/update", middleware.ValidateJWT(), handler.Updateuser)
-		auth.GET("/me", middleware.ValidateJWT(), handler.GetUser)
+		auth.POST("/signin", AuthHandler.SignIn)
+		auth.POST("/refresh", middleware.ValidateJWT(), AuthHandler.RefreshToken)
+		auth.POST("/logout", middleware.ValidateJWT(), AuthHandler.Logout)
+		auth.POST("/signup", AuthHandler.SignUp)
+		auth.POST("/change-password", middleware.ValidateJWT(), AuthHandler.ChangePassword)
+		auth.POST("/password-reset/request", AuthHandler.RequestPasswordReset)
+		auth.POST("/password-reset/confirm", AuthHandler.ResetPassword)
+		auth.PATCH("/update", middleware.ValidateJWT(), AuthHandler.Updateuser)
+		auth.GET("/me", middleware.ValidateJWT(), AuthHandler.GetUser)
 	}
 }

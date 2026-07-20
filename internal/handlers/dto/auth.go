@@ -26,8 +26,9 @@ type AuthTokensResponse struct {
 }
 
 type SignInRequest struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
+	Email          string `json:"email" validate:"required,email"`
+	Password       string `json:"password" validate:"required"`
+	OrganizationID string `json:"organization_id,omitempty"`
 }
 
 type RefreshTokenRequest struct {
@@ -36,13 +37,13 @@ type RefreshTokenRequest struct {
 }
 
 type SignUpRequest struct {
-	Email          string  `json:"email" validate:"required,email"`
-	Password       string  `json:"password" validate:"required"`
-	FullName       string  `json:"full_name" validate:"required"`
-	UserName       string  `json:"username" validate:"required"`
-	OrganizationID string  `json:"organization_id,omitempty"`
-	AvatarURL      *string `json:"avatar_url"`
-	Timezone       string  `json:"timezone"`
+	Email          string `json:"email" validate:"required,email"`
+	Password       string `json:"password" validate:"required"`
+	FullName       string `json:"full_name" validate:"required"`
+	UserName       string `json:"username" validate:"required"`
+	OrganizationID string `json:"organization_id,omitempty"`
+	AvatarURL      string `json:"avatar_url"`
+	Timezone       string `json:"timezone"`
 }
 
 type PasswordResetRequest struct {
@@ -75,8 +76,8 @@ type ChangePasswordRequest struct {
 }
 
 type UpdateUserRequest struct {
-	FullName  string  `json:"full_name"`
-	UserName  string  `json:"username"`
-	AvatarURL *string `json:"avatar_url"`
-	Timezone  string  `json:"timezone"`
+	FullName  string `json:"full_name"`
+	UserName  string `json:"username"`
+	AvatarURL string `json:"avatar_url"`
+	Timezone  string `json:"timezone"`
 }

@@ -15,6 +15,7 @@ import (
 
 type OrganizationRepository interface {
 	CreateOrganization(row models.Organization) *response.Error
+	GetByName(name string) (models.Organization, *response.Error)
 	GetByID(id uuid.UUID) (models.Organization, *response.Error)
 	UpdateOrganization(OrganizationID uuid.UUID, req models.Organization) *response.Error
 	DeleteOrganization(id uuid.UUID) *response.Error
@@ -56,6 +57,43 @@ func (d *Organizationdatabase) CreateOrganization(row models.Organization) *resp
 	return nil
 }
 
+func (d *Organizationdatabase) GetByName(name string) (models.Organization, *response.Error) {
+
+	var row models.Organization
+
+	err := d.DB.Where("name = ?", name).First(&row).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			errorResponse := response.Error{
+				Code:       response.ErrUnauthorized,
+				StatusCode: http.StatusUnauthorized,
+				Message:    "Organization Invalid/Missing",
+				Details: []response.Details{
+					{
+						Field:   "Organization",
+						Message: "Organization not found :" + name,
+					},
+				},
+			}
+			d.logger.Error("Organization not found in database",
+				zap.String("Name", name), zap.Error(err))
+			return models.Organization{}, &errorResponse
+		}
+
+		errorResponse := response.Error{
+			Code:       response.ErrInternalServerError,
+			StatusCode: http.StatusInternalServerError,
+			Message:    "InternalServerError",
+		}
+
+		d.logger.Error("Database error occurred",
+			zap.String("Name", name), zap.Error(err))
+		return models.Organization{}, &errorResponse
+	}
+
+	return row, nil
+}
+
 func (d *Organizationdatabase) GetByID(id uuid.UUID) (models.Organization, *response.Error) {
 
 	var row models.Organization
@@ -95,11 +133,7 @@ func (d *Organizationdatabase) UpdateOrganization(OrganizationID uuid.UUID, req 
 	result := d.DB.
 		Model(&models.Organization{}).
 		Where("id = ?", OrganizationID).
-		Updates(map[string]interface{}{
-			"name":     req.Name,
-			"domain":   req.Domain,
-			"logo_url": req.LogoURL,
-		})
+		Updates(req)
 
 	if result.Error != nil {
 

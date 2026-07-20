@@ -118,8 +118,9 @@ func (m Middleware) ValidateJWT() gin.HandlerFunc {
 
 		role, roleOk := claims["role"].(string)
 		userID, userIDOk := claims["user_id"].(string)
+		organizationID, organizationIDOk := claims["Organization_id"].(string)
 
-		if !roleOk || !userIDOk || (role == "" && userID == "") {
+		if !roleOk || !userIDOk || !organizationIDOk || (role == "" && userID == "") {
 			errorResponse := response.Error{
 				Code:       response.ErrForbidden,
 				StatusCode: http.StatusForbidden,
@@ -141,6 +142,7 @@ func (m Middleware) ValidateJWT() gin.HandlerFunc {
 
 		c.Set("role", role)
 		c.Set("user_id", userID)
+		c.Set("Organization_id", organizationID)
 
 		c.Next()
 	}

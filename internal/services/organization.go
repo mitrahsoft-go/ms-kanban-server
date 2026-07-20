@@ -2,6 +2,7 @@ package services
 
 import (
 	"github.com/gofrs/uuid"
+	"github.com/ms-kanban-server/internal/handlers/dto"
 	"github.com/ms-kanban-server/internal/pkg/models"
 	"github.com/ms-kanban-server/internal/pkg/response"
 	"github.com/ms-kanban-server/internal/repository"
@@ -15,34 +16,57 @@ type OrganizationService interface {
 	DeleteOrganization(id uuid.UUID) *response.Error
 }
 
-func InitOrganizationService(repo repository.OrganizationRepository, logger *zap.Logger) OrganizationService {
+func InitOrganizationService(repo repository.OrganizationRepository, AuthRepo repository.AuthRepository, logger *zap.Logger) OrganizationService {
 	return &Organizationservice{
-		Repo:   repo,
-		logger: logger,
+		OrganizationRepo: repo,
+		logger:           logger,
+		AuthRepo:         AuthRepo,
 	}
 }
 
 type Organizationservice struct {
-	Repo   repository.OrganizationRepository
-	logger *zap.Logger
+	AuthRepo         repository.AuthRepository
+	OrganizationRepo repository.OrganizationRepository
+	logger           *zap.Logger
 }
 
 func (s *Organizationservice) GetOrganizationByID(id uuid.UUID) (models.Organization, *response.Error) {
 
-	return s.Repo.GetByID(id)
+	return s.OrganizationRepo.GetByID(id)
 }
 
 func (s *Organizationservice) CreateOrganization(row models.Organization) *response.Error {
 
-	return s.Repo.CreateOrganization(row)
+	err := s.OrganizationRepo.CreateOrganization(row)
+	if err != nil {
+		return err
+	}
+
+	organization, err := s.OrganizationRepo.GetByName(row.Name)
+	if err != nil {
+		return err
+	}
+
+	user := models.User{
+		OrganizationID: &organization.ID,
+		Role:           string(dto.RoleOrgAdmin),
+	}
+
+	err = s.AuthRepo.UpdateUser(row.CreatedBy, user)
+	if err != nil {
+		s.OrganizationRepo.DeleteOrganization(organization.ID)
+		return err
+	}
+
+	return nil
 }
 
 func (s *Organizationservice) UpdateOrganization(OrganizationID uuid.UUID, req models.Organization) *response.Error {
 
-	return s.Repo.UpdateOrganization(OrganizationID, req)
+	return s.OrganizationRepo.UpdateOrganization(OrganizationID, req)
 }
 
 func (s *Organizationservice) DeleteOrganization(id uuid.UUID) *response.Error {
 
-	return s.Repo.DeleteOrganization(id)
+	return s.OrganizationRepo.DeleteOrganization(id)
 }

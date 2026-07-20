@@ -36,7 +36,7 @@ type OrganizationHandler struct {
 // @Success      200 {object} response.SuccessResponse{data=models.Organization}
 // @Failure      401 {object} response.ErrorResponse
 // @Failure      500 {object} response.ErrorResponse
-// @Router       /auth/delete [delete]
+// @Router       /organization/delete [delete]
 func (h *OrganizationHandler) DeleteOrganization(g *gin.Context) {
 
 	OrganizationID, exist := g.Get("Organization_id")
@@ -101,7 +101,7 @@ func (h *OrganizationHandler) DeleteOrganization(g *gin.Context) {
 // @Failure      400 {object} response.ErrorResponse
 // @Failure      404 {object} response.ErrorResponse
 // @Failure      500 {object} response.ErrorResponse
-// @Router       /Organizations/{id} [patch]
+// @Router       /Organizations/ [patch]
 func (h *OrganizationHandler) UpdateOrganization(g *gin.Context) {
 
 	var payload dto.UpdateOrganizationRequest
@@ -160,8 +160,8 @@ func (h *OrganizationHandler) UpdateOrganization(g *gin.Context) {
 
 	credentials := models.Organization{
 		Name:    payload.Name,
-		Domain:  &payload.Domain,
-		LogoURL: &payload.LogoURL,
+		Domain:  payload.Domain,
+		LogoURL: payload.LogoURL,
 	}
 	err := h.service.UpdateOrganization(id, credentials)
 	if err != nil {
@@ -194,7 +194,7 @@ func (h *OrganizationHandler) UpdateOrganization(g *gin.Context) {
 // @Success      200 {object} response.SuccessResponse{data=models.Organization}
 // @Failure      401 {object} response.ErrorResponse
 // @Failure      500 {object} response.ErrorResponse
-// @Router       /auth/mine [get]
+// @Router       /organization/mine [get]
 func (h *OrganizationHandler) GetOrganizationByID(g *gin.Context) {
 
 	OrganizationID, exist := g.Get("Organization_id")
@@ -259,7 +259,7 @@ func (h *OrganizationHandler) GetOrganizationByID(g *gin.Context) {
 // @Failure      400 {object} response.ErrorResponse
 // @Failure      409 {object} response.ErrorResponse
 // @Failure      500 {object} response.ErrorResponse
-// @Router       /auth/Create [post]
+// @Router       /organization/Create [post]
 func (h *OrganizationHandler) CreateOrganization(g *gin.Context) {
 
 	var payload dto.CreateOrganizationRequest
@@ -313,11 +313,43 @@ func (h *OrganizationHandler) CreateOrganization(g *gin.Context) {
 		return
 	}
 
+	userID, exist := g.Get("user_id")
+	if !exist {
+		errorResponse := &response.ErrorResponse{
+			Success: false,
+			Error: response.Error{
+				Code:       response.ErrValidation,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid User ID",
+				Details: []response.Details{
+					{
+						Field:   "User ID",
+						Message: "User Id Invalid/Missing",
+					},
+				},
+			},
+		}
+
+		h.logger.Error("User Id Invalid/Missing",
+			zap.String("user id :", fmt.Sprintf("%v", userID)))
+
+		g.JSON(errorResponse.Error.StatusCode, errorResponse)
+		return
+	}
+
 	credentials := models.Organization{
 		Name:    payload.Name,
 		Domain:  payload.Domain,
 		LogoURL: payload.LogoURL,
 	}
+
+	uuid, errorResponse := utils.StringToUUID(userID.(string))
+	if errorResponse != nil {
+		h.logger.Error("Failed to convert the string into UUID")
+		return
+	}
+
+	credentials.CreatedBy = uuid
 
 	err := h.service.CreateOrganization(credentials)
 	if err != nil {

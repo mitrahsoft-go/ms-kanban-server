@@ -20,9 +20,10 @@ const (
 type Organization struct {
 	ID        uuid.UUID      `json:"id" gorm:"primaryKey;type:uuid"`
 	Name      string         `json:"name" gorm:"size:50;not null;unique;index:idx_organization_name"`
+	CreatedBy uuid.UUID      `json:"created_by" gorm:"not null"`
 	IsActive  bool           `json:"is_active" gorm:"default:true"`
-	Domain    *string        `json:"domain" validate:"required" gorm:"size:150;not null;unique"`
-	LogoURL   *string        `json:"logo_url" validate:"required" gorm:"size:150;not null"`
+	Domain    string         `json:"domain" validate:"required" gorm:"size:150;not null;unique"`
+	LogoURL   string         `json:"logo_url" validate:"required" gorm:"size:150;not null"`
 	CreatedAt time.Time      `json:"created_at" gorm:"not null;type:timestamptz"`
 	UpdatedAt time.Time      `json:"updated_at" gorm:"type:timestamptz"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index:idx_organization_deleted_at"`
@@ -37,7 +38,7 @@ type User struct {
 	Email          string         `json:"email" validate:"required,email" gorm:"size:100;not null;unique;index:idx_users_email"`
 	PasswordHash   string         `json:"password_hash" validate:"required"`
 	Role           string         `json:"role" gorm:"size:30;index:idx_users_role"`
-	AvatarURL      *string        `json:"avatar_url" gorm:"size:255"`
+	AvatarURL      string         `json:"avatar_url" gorm:"size:255"`
 	Timezone       string         `json:"timezone" gorm:"size:50;default:'UTC'"`
 	IsActive       bool           `json:"is_active" gorm:"default:true"`
 	CreatedAt      time.Time      `json:"created_at" gorm:"not null;type:timestamptz"`
@@ -80,6 +81,16 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 func (r *RefreshToken) BeforeCreate(tx *gorm.DB) (err error) {
+	if r.ID == uuid.Nil {
+		r.ID, err = uuid.NewV7()
+		if err != nil {
+			return err
+		}
+	}
+	return
+}
+
+func (r *Organization) BeforeCreate(tx *gorm.DB) (err error) {
 	if r.ID == uuid.Nil {
 		r.ID, err = uuid.NewV7()
 		if err != nil {

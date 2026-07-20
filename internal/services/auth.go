@@ -53,6 +53,14 @@ func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResp
 		return nil, err
 	}
 
+	var organizationID uuid.UUID
+
+	if result.OrganizationID == nil || *result.OrganizationID == uuid.Nil {
+		organizationID = uuid.Nil
+	} else {
+		organizationID = *result.OrganizationID
+	}
+
 	if !result.IsActive {
 		s.logger.Error("Login rejected for inactive user",
 			zap.String("email", credentials.Email))
@@ -84,7 +92,7 @@ func (s *authservice) SignIn(credentials dto.SignInRequest) (*dto.AuthTokensResp
 	tokencredentials := dto.JWtcredentials{
 		Role:           result.Role,
 		UserId:         result.ID,
-		OrganizationID: *result.OrganizationID,
+		OrganizationID: &organizationID,
 	}
 
 	accessToken, tokenErr := middleware.GenerateJWT(tokencredentials, s.logger)
@@ -189,6 +197,14 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 	if userErr != nil {
 		return nil, userErr
 	}
+	var organizationID uuid.UUID
+
+	if user.OrganizationID == nil || *user.OrganizationID == uuid.Nil {
+		organizationID = uuid.Nil
+	} else {
+		organizationID = *user.OrganizationID
+	}
+
 	if !user.IsActive {
 		return nil, &response.Error{
 			Code:       response.ErrForbidden,
@@ -203,8 +219,9 @@ func (s *authservice) RefreshToken(credentials dto.RefreshTokenRequest) (*dto.Au
 	tokencredentials := dto.JWtcredentials{
 		Role:           user.Role,
 		UserId:         user.ID,
-		OrganizationID: *user.OrganizationID,
+		OrganizationID: &organizationID,
 	}
+
 	accessToken, tokenErr := middleware.GenerateJWT(tokencredentials, s.logger)
 	if tokenErr != nil {
 		return nil, tokenErr
