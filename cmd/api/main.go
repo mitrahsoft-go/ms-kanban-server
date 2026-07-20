@@ -50,20 +50,20 @@ func main() {
 	dbConn, err := postgres.InitDB(config)
 	if err != nil {
 		Logger.Fatal("Failed to initialize database connection :",
-			zap.String("ERROR : ", err.Error()))
+			zap.String("ERROR", err.Error()))
 	} else {
 		Logger.Info("Initialized the Database Connection",
-			zap.String("port :", config.Database.Port))
+			zap.String("port", config.Database.Port))
 	}
 
 	// Initialize the RedisClient
 	redisClient, err := redis.InitRedisClient(config)
 	if err != nil {
 		Logger.Error("Failed to initialize Redis client:",
-			zap.String("ERROR : ", err.Error()))
+			zap.String("ERROR", err.Error()))
 	} else {
 		Logger.Info("Initialized the RedisClient",
-			zap.String("port :", config.Redis.Port))
+			zap.String("port", config.Redis.Port))
 	}
 
 	//Initialize the Gin router and set up routes
@@ -80,10 +80,10 @@ func main() {
 
 	// Start the server
 	Logger.Info("Server is running",
-		zap.String("port ", config.HTTP.Port))
+		zap.String("port", config.HTTP.Port))
 	err = router.Run(fmt.Sprintf(":%s", config.HTTP.Port))
 	if err != nil {
 		Logger.Fatal("Failed to start server ",
-			zap.String("ERROR : ", err.Error()))
+			zap.String("ERROR", err.Error()))
 	}
 }

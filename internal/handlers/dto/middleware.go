@@ -6,7 +6,14 @@ import (
 )
 
 type ClaimsJWT struct {
-	Role   string    `json:"role"`
-	UserId uuid.UUID `json:"user_id"`
+	Role           string    `json:"role"`
+	UserId         uuid.UUID `json:"user_id"`
+	OrganizationID uuid.UUID `json:"Organization_id"`
 	jwt.RegisteredClaims
+}
+
+type JWtcredentials struct {
+	Role           string     `json:"role"`
+	UserId         uuid.UUID  `json:"user_id"`
+	OrganizationID *uuid.UUID `json:"Organization_id"`
 }

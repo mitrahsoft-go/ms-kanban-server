@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type Repository interface {
+type AuthRepository interface {
 	GetByEmail(email string) (models.User, *response.Error)
 	GetByID(id uuid.UUID) (models.User, *response.Error)
 	CreateUser(row models.User) *response.Error
@@ -33,11 +33,11 @@ type Repository interface {
 	UpdateUser(userID uuid.UUID, req models.User) *response.Error
 }
 
-func InitAuthRepository(db *gorm.DB, redisClient *redisclient.Client, logger *zap.Logger) Repository {
+func InitAuthRepository(deps models.Config) AuthRepository {
 	return &authdatabase{
-		DB:          db,
-		redisClient: redisClient,
-		logger:      logger,
+		DB:          deps.Database,
+		redisClient: deps.Redis,
+		logger:      deps.Logger,
 	}
 }
 
@@ -51,7 +51,7 @@ func (d *authdatabase) GetByEmail(email string) (models.User, *response.Error) {
 
 	var row models.User
 
-	err := d.DB.Where("email = ?", email).First(&row).Error
+	err := d.DB.Where("email = ?", email).Preload("Organization").First(&row).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			errorResponse := response.Error{
@@ -93,7 +93,7 @@ func (d *authdatabase) GetByID(id uuid.UUID) (models.User, *response.Error) {
 
 	var row models.User
 
-	if err := d.DB.Where("id = ?", id).First(&row).Error; err != nil {
+	if err := d.DB.Where("id = ?", id).Preload("Organization").First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 
 			d.logger.Error("The user associated with the refresh token could not be found",
@@ -333,12 +333,7 @@ func (d *authdatabase) UpdateUser(userID uuid.UUID, req models.User) *response.E
 	result := d.DB.
 		Model(&models.User{}).
 		Where("id = ?", userID).
-		Updates(map[string]interface{}{
-			"full_name":  req.FullName,
-			"username":   req.UserName,
-			"avatar_url": req.AvatarURL,
-			"timezone":   req.Timezone,
-		})
+		Updates(req)
 
 	if result.Error != nil {
 
@@ -350,7 +345,7 @@ func (d *authdatabase) UpdateUser(userID uuid.UUID, req models.User) *response.E
 			StatusCode: http.StatusInternalServerError,
 			Message:    "Failed to update user",
 			Details: []response.Details{{
-				Message: "Failed updating user: " + result.Error.Error(),
+				Message: "Failed updating user",
 			}},
 		}
 	}

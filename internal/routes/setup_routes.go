@@ -65,6 +65,7 @@ func SetupRoutes(deps models.Config) {
 	api := deps.Router.Group("/api/v1")
 	{
 		AuthRoutes(deps, api)
+		OrganizationRoutes(deps, api)
 	}
 
 }
