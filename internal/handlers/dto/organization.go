@@ -7,7 +7,7 @@ type UpdateOrganizationRequest struct {
 }
 
 type CreateOrganizationRequest struct {
-	Name    string  `json:"name" validate:"required"`
+	Name    string `json:"name" validate:"required"`
 	Domain  string `json:"domain" validate:"required"`
 	LogoURL string `json:"logo_url" validate:"required"`
 }

@@ -153,7 +153,6 @@ func (h *OrganizationHandler) UpdateOrganization(g *gin.Context) {
 	id, errorResponse := utils.StringToUUID(OrganizationIDStr)
 	if errorResponse != nil {
 		h.logger.Error("Failed to convert the string into UUID")
-		h.logger.Error("Failed to convert the string into UUID in Handler layer")
 		g.JSON(errorResponse.StatusCode, errorResponse)
 		return
 	}
